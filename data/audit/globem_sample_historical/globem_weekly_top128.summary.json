@@ -1,0 +1,12 @@
+{
+  "input_csv": "data/audit/globem_sample_historical/globem_weekly_clean_all_cohorts.csv.gz",
+  "output_arff": "data/audit/globem_sample_historical/globem_weekly_top128.arff",
+  "rows": 120,
+  "participants": 40,
+  "top_k_features": 128,
+  "selected_behavior_features": 128,
+  "selected_aux_features": 2,
+  "total_selected_features": 130,
+  "label_positive_rate": 0.425,
+  "manifest_csv": "data/audit/globem_sample_historical/globem_weekly_top128.manifest.csv"
+}

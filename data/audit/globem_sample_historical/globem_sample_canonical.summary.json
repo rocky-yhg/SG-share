@@ -1,0 +1,10 @@
+{
+  "input_arff": "data/audit/globem_sample_historical/globem_weekly_top128.arff",
+  "output_csv": "data/audit/globem_sample_historical/globem_sample_canonical.csv",
+  "rows": 120,
+  "users": 40,
+  "features": 130,
+  "positive_rate": 0.425,
+  "min_user_rows": 0,
+  "row_order_preserved": true
+}

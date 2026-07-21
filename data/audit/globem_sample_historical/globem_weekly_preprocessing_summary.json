@@ -1,0 +1,352 @@
+{
+  "source_root": "vendor/GLOBEM/data_raw",
+  "modalities": [
+    "bluetooth",
+    "call",
+    "location",
+    "screen",
+    "sleep",
+    "steps",
+    "wifi"
+  ],
+  "max_missing_ratio": 0.9,
+  "drop_discrete_rank": true,
+  "cohorts": {
+    "INS-W-sample_1": {
+      "cohort": "INS-W-sample_1",
+      "weekly_rows_before_join": 30,
+      "weekly_rows_after_join": 30,
+      "participants_in_weekly": 10,
+      "participants_in_output": 10,
+      "positive_rate": 0.5333333333333333,
+      "feature_tables": {
+        "bluetooth": {
+          "source_rows": 481,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 891,
+          "dropped_discrete_rank_columns": 297,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 2,
+          "remaining_feature_columns": 592,
+          "mean_missing_ratio_after_filter": 0.3227477477477477
+        },
+        "call": {
+          "source_rows": 481,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 783,
+          "dropped_discrete_rank_columns": 261,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 84,
+          "remaining_feature_columns": 438,
+          "mean_missing_ratio_after_filter": 0.5853881278538813
+        },
+        "location": {
+          "source_rows": 481,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 1107,
+          "dropped_discrete_rank_columns": 369,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 112,
+          "remaining_feature_columns": 626,
+          "mean_missing_ratio_after_filter": 0.23322683706070288
+        },
+        "screen": {
+          "source_rows": 481,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 1134,
+          "dropped_discrete_rank_columns": 378,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 62,
+          "remaining_feature_columns": 694,
+          "mean_missing_ratio_after_filter": 0.4470701248799232
+        },
+        "sleep": {
+          "source_rows": 481,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 918,
+          "dropped_discrete_rank_columns": 306,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 136,
+          "remaining_feature_columns": 476,
+          "mean_missing_ratio_after_filter": 0.42086834733893563
+        },
+        "steps": {
+          "source_rows": 481,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 594,
+          "dropped_discrete_rank_columns": 198,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 42,
+          "remaining_feature_columns": 354,
+          "mean_missing_ratio_after_filter": 0.2542372881355932
+        },
+        "wifi": {
+          "source_rows": 481,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 81,
+          "dropped_discrete_rank_columns": 27,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 6,
+          "remaining_feature_columns": 48,
+          "mean_missing_ratio_after_filter": 0.6944444444444443
+        }
+      },
+      "final_feature_columns": 3228
+    },
+    "INS-W-sample_2": {
+      "cohort": "INS-W-sample_2",
+      "weekly_rows_before_join": 30,
+      "weekly_rows_after_join": 30,
+      "participants_in_weekly": 10,
+      "participants_in_output": 10,
+      "positive_rate": 0.4,
+      "feature_tables": {
+        "bluetooth": {
+          "source_rows": 492,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 891,
+          "dropped_discrete_rank_columns": 297,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 66,
+          "remaining_feature_columns": 528,
+          "mean_missing_ratio_after_filter": 0.09166666666666666
+        },
+        "call": {
+          "source_rows": 492,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 783,
+          "dropped_discrete_rank_columns": 261,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 116,
+          "remaining_feature_columns": 406,
+          "mean_missing_ratio_after_filter": 0.2985221674876847
+        },
+        "location": {
+          "source_rows": 492,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 1107,
+          "dropped_discrete_rank_columns": 369,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 194,
+          "remaining_feature_columns": 544,
+          "mean_missing_ratio_after_filter": 0.06752450980392155
+        },
+        "screen": {
+          "source_rows": 492,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 1134,
+          "dropped_discrete_rank_columns": 378,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 128,
+          "remaining_feature_columns": 628,
+          "mean_missing_ratio_after_filter": 0.2874734607218684
+        },
+        "sleep": {
+          "source_rows": 492,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 918,
+          "dropped_discrete_rank_columns": 306,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 232,
+          "remaining_feature_columns": 380,
+          "mean_missing_ratio_after_filter": 0.3219298245614035
+        },
+        "steps": {
+          "source_rows": 492,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 594,
+          "dropped_discrete_rank_columns": 198,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 86,
+          "remaining_feature_columns": 310,
+          "mean_missing_ratio_after_filter": 0.2767741935483871
+        },
+        "wifi": {
+          "source_rows": 492,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 81,
+          "dropped_discrete_rank_columns": 27,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 6,
+          "remaining_feature_columns": 48,
+          "mean_missing_ratio_after_filter": 0.5527777777777777
+        }
+      },
+      "final_feature_columns": 2844
+    },
+    "INS-W-sample_3": {
+      "cohort": "INS-W-sample_3",
+      "weekly_rows_before_join": 30,
+      "weekly_rows_after_join": 30,
+      "participants_in_weekly": 10,
+      "participants_in_output": 10,
+      "positive_rate": 0.3333333333333333,
+      "feature_tables": {
+        "bluetooth": {
+          "source_rows": 572,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 891,
+          "dropped_discrete_rank_columns": 297,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 66,
+          "remaining_feature_columns": 528,
+          "mean_missing_ratio_after_filter": 0.19772727272727275
+        },
+        "call": {
+          "source_rows": 572,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 783,
+          "dropped_discrete_rank_columns": 261,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 78,
+          "remaining_feature_columns": 444,
+          "mean_missing_ratio_after_filter": 0.5202702702702703
+        },
+        "location": {
+          "source_rows": 572,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 1107,
+          "dropped_discrete_rank_columns": 369,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 194,
+          "remaining_feature_columns": 544,
+          "mean_missing_ratio_after_filter": 0.07414215686274508
+        },
+        "screen": {
+          "source_rows": 572,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 1134,
+          "dropped_discrete_rank_columns": 378,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 480,
+          "remaining_feature_columns": 276,
+          "mean_missing_ratio_after_filter": 0.24444444444444446
+        },
+        "sleep": {
+          "source_rows": 572,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 918,
+          "dropped_discrete_rank_columns": 306,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 196,
+          "remaining_feature_columns": 416,
+          "mean_missing_ratio_after_filter": 0.21330128205128202
+        },
+        "steps": {
+          "source_rows": 572,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 594,
+          "dropped_discrete_rank_columns": 198,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 86,
+          "remaining_feature_columns": 310,
+          "mean_missing_ratio_after_filter": 0.09870967741935485
+        },
+        "wifi": {
+          "source_rows": 572,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 81,
+          "dropped_discrete_rank_columns": 27,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 6,
+          "remaining_feature_columns": 48,
+          "mean_missing_ratio_after_filter": 0.09861111111111111
+        }
+      },
+      "final_feature_columns": 2566
+    },
+    "INS-W-sample_4": {
+      "cohort": "INS-W-sample_4",
+      "weekly_rows_before_join": 30,
+      "weekly_rows_after_join": 30,
+      "participants_in_weekly": 10,
+      "participants_in_output": 10,
+      "positive_rate": 0.43333333333333335,
+      "feature_tables": {
+        "bluetooth": {
+          "source_rows": 485,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 891,
+          "dropped_discrete_rank_columns": 297,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 66,
+          "remaining_feature_columns": 528,
+          "mean_missing_ratio_after_filter": 0.1429292929292929
+        },
+        "call": {
+          "source_rows": 485,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 783,
+          "dropped_discrete_rank_columns": 261,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 82,
+          "remaining_feature_columns": 440,
+          "mean_missing_ratio_after_filter": 0.4296969696969697
+        },
+        "location": {
+          "source_rows": 485,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 1107,
+          "dropped_discrete_rank_columns": 369,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 194,
+          "remaining_feature_columns": 544,
+          "mean_missing_ratio_after_filter": 0.04693627450980392
+        },
+        "screen": {
+          "source_rows": 485,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 1134,
+          "dropped_discrete_rank_columns": 378,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 266,
+          "remaining_feature_columns": 490,
+          "mean_missing_ratio_after_filter": 0.36163265306122444
+        },
+        "sleep": {
+          "source_rows": 485,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 918,
+          "dropped_discrete_rank_columns": 306,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 212,
+          "remaining_feature_columns": 400,
+          "mean_missing_ratio_after_filter": 0.21283333333333335
+        },
+        "steps": {
+          "source_rows": 485,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 594,
+          "dropped_discrete_rank_columns": 198,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 86,
+          "remaining_feature_columns": 310,
+          "mean_missing_ratio_after_filter": 0.1305376344086021
+        },
+        "wifi": {
+          "source_rows": 485,
+          "matched_weekly_rows": 30,
+          "initial_feature_columns": 81,
+          "dropped_discrete_rank_columns": 27,
+          "dropped_mixed_type_columns": 0,
+          "dropped_high_missing_columns": 6,
+          "remaining_feature_columns": 48,
+          "mean_missing_ratio_after_filter": 0.12916666666666665
+        }
+      },
+      "final_feature_columns": 2760
+    }
+  },
+  "combined": {
+    "rows": 120,
+    "participants": 40,
+    "cohorts": [
+      "INS-W-sample_1",
+      "INS-W-sample_2",
+      "INS-W-sample_3",
+      "INS-W-sample_4"
+    ],
+    "positive_rate": 0.425,
+    "feature_columns": 3284
+  }
+}

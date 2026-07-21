@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.DS_Store
+.tmp/
+=
+
+# Dataset payloads are obtained from their official sources. Never publish
+# participant-level raw or processed records from this repository.
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+data/audit/**/*.csv*
+data/audit/**/*.arff
+
+# Third-party repositories are fetched at pinned commits for source audits.
+# Keep their own histories and licenses separate from SG-Share.
+vendor/
+
+# Generated predictions, checkpoints, and experiment reports are local output.
+results/*
+!results/.gitkeep
+*.ckpt
+*.pt
+*.pth
+*.npz

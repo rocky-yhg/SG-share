@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sgshare-reproduction"
+version = "0.1.0"
+description = "Auditable reproduction of SG-Share online group adaptation experiments"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "scikit-learn>=1.3",
+  "scipy>=1.10",
+  "torch>=2.0",
+  "PyYAML>=6.0",
+]
+
+[project.scripts]
+sgshare-prepare = "sgshare.data:main"
+sgshare-run = "sgshare.experiment:main"
+sgshare-reproduce = "sgshare.reproduce:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sgshare*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,89 @@
+{
+  "ces": {
+    "status": "pass",
+    "path": "data/processed/ces_historical_usernorm.csv",
+    "expected": {
+      "rows": 35289,
+      "users": 218,
+      "positives": 10053,
+      "features": 37,
+      "positive_rate": 0.2848763070645244
+    },
+    "observed": {
+      "rows": 35289,
+      "users": 218,
+      "positives": 10053,
+      "features": 37,
+      "positive_rate": 0.2848763070645244,
+      "feature_order_starts_with_day": true,
+      "chronological_stable_order": true,
+      "nonfinite_feature_values": 0,
+      "max_abs_per_user_sensing_mean": 1.7270135938613546e-15,
+      "max_abs_nonconstant_std_error": 1.2656542480726785e-14
+    },
+    "checks": {
+      "rows": true,
+      "users": true,
+      "positives": true,
+      "features": true,
+      "positive_rate": true,
+      "feature_order": true,
+      "ordering": true,
+      "finite": true,
+      "per_user_centered": true,
+      "per_user_population_scaled": true
+    }
+  },
+  "globem": {
+    "status": "pass",
+    "scope": "official_sample_contract",
+    "paths": {
+      "aligned": "data/audit/globem_sample_historical/globem_weekly_clean_all_cohorts.csv.gz",
+      "arff": "data/audit/globem_sample_historical/globem_weekly_top128.arff",
+      "preprocessing_summary": "data/audit/globem_sample_historical/globem_weekly_preprocessing_summary.json"
+    },
+    "expected": {
+      "rows": 120,
+      "users": 40,
+      "features": 130,
+      "positive_rate": 0.425
+    },
+    "observed": {
+      "rows": 120,
+      "users": 40,
+      "features": 130,
+      "positive_rate": 0.425,
+      "aligned_rows": 120,
+      "modalities": [
+        "bluetooth",
+        "call",
+        "location",
+        "screen",
+        "sleep",
+        "steps",
+        "wifi"
+      ],
+      "drop_discrete_rank": true,
+      "max_missing_ratio": 0.9,
+      "uid_uses_cohort_double_colon_pid": true,
+      "nonfinite_feature_values": 0,
+      "max_abs_global_feature_mean": 4.0833332789110464e-09,
+      "max_abs_nonconstant_std_error": 9.70040936465466e-10
+    },
+    "checks": {
+      "rows": true,
+      "aligned_rows_preserved": true,
+      "users": true,
+      "features": true,
+      "positive_rate": true,
+      "seven_modalities": true,
+      "drop_discrete_rank": true,
+      "missing_threshold": true,
+      "uid_rule": true,
+      "finite": true,
+      "global_centered": true,
+      "global_population_scaled": true
+    }
+  },
+  "interpretation": "CES is audited against the recovered full paper stream. GLOBEM is currently audited only as an official-sample file-contract run; the protected full-release counts and model results remain unverified."
+}
