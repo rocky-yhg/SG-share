@@ -63,7 +63,8 @@ def _cold_rows(dataset: str, method: str, scope: str, seed: int, rows: Iterable[
 
 
 def _run_one(dataset: str, method: str, scope: str, seed: int, stream, feature_count: int,
-             root: Path, skip_existing: bool) -> tuple[Dict[str, Any], list[Dict[str, Any]]]:
+             root: Path, skip_existing: bool,
+             raw_fixed_05: bool) -> tuple[Dict[str, Any], list[Dict[str, Any]]]:
     run_dir = root / dataset / f"{method}_{scope}_seed{seed}"
     metrics_path = run_dir / "metrics.json"
     if skip_existing and metrics_path.exists():
@@ -74,6 +75,11 @@ def _run_one(dataset: str, method: str, scope: str, seed: int, stream, feature_c
         )
     config = load_config(dataset=dataset)
     config.seed = int(seed)
+    if raw_fixed_05:
+        config.training.smoothing_window = 1
+        config.training.threshold_mode = "fixed"
+        config.training.threshold_default = 0.5
+        config.training.user_threshold_posrate_bias = False
     learner = OnlineSOTALearner(feature_count, config, method, scope)
     metrics = learner.run(stream)
     metrics.update({"dataset": dataset, "method": method, "scope": scope, "seed": seed})
@@ -91,7 +97,8 @@ def run_suite(datasets: Sequence[str], methods: Sequence[str], scopes: Sequence[
               seeds: Sequence[int], output: str | Path,
               data_overrides: Dict[str, str] | None = None,
               max_events: int | None = None, skip_existing: bool = False,
-              no_scaling: bool = False) -> Dict[str, Any]:
+              no_scaling: bool = False,
+              raw_fixed_05: bool = False) -> Dict[str, Any]:
     root = Path(output)
     root.mkdir(parents=True, exist_ok=True)
     data_paths = dict(DEFAULT_DATA)
@@ -117,7 +124,8 @@ def run_suite(datasets: Sequence[str], methods: Sequence[str], scopes: Sequence[
                     print(f"running {dataset}/{method}/{scope}/seed{seed} n={len(stream)}", flush=True)
                     try:
                         summary, cold = _run_one(dataset, method, scope, int(seed), stream,
-                                                 len(feature_names), root, skip_existing)
+                                                 len(feature_names), root, skip_existing,
+                                                 raw_fixed_05)
                         summary_rows.append(summary)
                         cold_rows.extend(cold)
                         print(f"done F1={summary['f1']:.4f} post={summary['post_f1']:.4f} "
@@ -142,6 +150,10 @@ def run_suite(datasets: Sequence[str], methods: Sequence[str], scopes: Sequence[
             ),
             "primary_metric": "positive-class F1",
             "cold_start": "first-K user-macro and pooled positive-class F1",
+            "prediction": (
+                "raw_probability >= 0.5; no smoothing or threshold search"
+                if raw_fixed_05 else "configured online prediction path"
+            ),
         },
     }
     with (root / "summary.json").open("w", encoding="utf-8") as handle:
@@ -161,6 +173,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--max-events", type=int)
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument(
+        "--raw-fixed-05", action="store_true",
+        help="Use raw probabilities, threshold 0.5, no smoothing or threshold search.",
+    )
+    parser.add_argument(
         "--no-scaling", action="store_true",
         help="Use stored feature values without applying the online standardizer.",
     )
@@ -179,6 +195,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         _csv_values(args.datasets), methods, scopes,
         [int(value) for value in _csv_values(args.seeds)], args.output,
         overrides, args.max_events, args.skip_existing, args.no_scaling,
+        args.raw_fixed_05,
     )
     print(json.dumps(payload, indent=2, sort_keys=True))
 

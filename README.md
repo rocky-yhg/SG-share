@@ -112,6 +112,33 @@ The historical target name is:
 p0_bias_best_cflsplit_a_m005_u10_e50
 ```
 
+## Named deployment presets
+
+The recovered classification-tuned and cold-safe parameter points now have a
+single executable interface:
+
+```bash
+python process/run_sg_share_named_preset.py \
+  --dataset ces --preset classification_tuned \
+  --data data/processed/ces.csv --output results/ces_classification_tuned
+
+python process/run_sg_share_named_preset.py \
+  --dataset globem --preset cold_safe \
+  --data data/processed/globem.csv --output results/globem_cold_safe
+```
+
+The four exact dataset/preset combinations, their eligibility semantics, and
+their differences from the previous GitHub runner interface are documented in
+[Named presets](docs/NAMED_PRESETS.md). Every run stores `preset.json` and the
+complete resolved `config.yaml`.
+
+Run all online SOTA scopes plus both named SG-Share presets without touching
+the processed datasets:
+
+```bash
+bash scripts/run_named_reproduction.sh data/processed results/named_reproduction
+```
+
 In this repository it maps to `full_final`, which contains:
 
 ```text

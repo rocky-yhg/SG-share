@@ -6,10 +6,11 @@ The suite evaluates every method in two state scopes:
 - `per_user`: one independent model state is created for each user.
 
 Every run is strictly prequential: predict, reveal the current label, then update.
-The first event is included. All methods share the same causal online feature
-standardizer, probability smoothing, causal window-F1 threshold selection, and
-positive-class F1 metrics. Cold-start outputs include user-macro and pooled F1
-for each configured first-K value.
+The first event is included. With `--raw-fixed-05`, all methods use
+`raw_probability >= 0.5`, without probability smoothing or threshold search.
+Without that flag, the legacy configured prediction path remains available.
+Cold-start outputs include user-macro and pooled F1 for each configured first-K
+value.
 
 ## Implementation status
 
@@ -30,15 +31,17 @@ are compatibility analyses, not official numerical reproductions.
 
 ```bash
 python process/run_online_sota_suite.py \
-  --datasets ces \
+  --datasets ces,globem \
   --methods oli2ds,obal,hbp,koil,olifl,olfl \
-  --scopes global,per_user \
+  --scopes global,per_user --raw-fixed-05 --no-scaling \
   --seeds 42 \
-  --output results/online_sota_ces_20260720
+  --ces-data data/processed/ces.csv \
+  --globem-data data/processed/globem.csv \
+  --output results/online_sota_raw05
 
 python process/summarize_online_sota_suite.py
 ```
 
-The restored repository currently contains only a 120-event GLOBEM sample.
-Runs on that sample validate the pipeline but are not a full-dataset performance
-comparison. A full GLOBEM table requires the protected complete stream.
+Participant-level streams are intentionally not committed. A complete GLOBEM
+comparison requires the protected full stream at the path supplied through
+`--globem-data`.
