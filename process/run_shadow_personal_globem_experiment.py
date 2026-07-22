@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import sys
@@ -23,13 +24,41 @@ from sgshare.learner import SGShareLearner
 from sgshare.metrics import binary_metrics
 
 
-VARIANTS: Mapping[str, tuple[str, float]] = {
-    "standalone": ("standalone", 0.0),
-    "user_mean": ("user_mean", 0.0),
-    "shadow_no_refresh": ("shadow_personal", 0.0),
-    "shadow_refresh_a10": ("shadow_personal", 0.10),
-    "shadow_refresh_a30": ("shadow_personal", 0.30),
+@dataclass(frozen=True)
+class VariantConfig:
+    adapter_mode: str
+    refresh_alpha: float = 0.0
+    split_profile: str = "historical"
+
+
+VARIANTS: Mapping[str, VariantConfig] = {
+    "standalone": VariantConfig("standalone"),
+    "user_mean": VariantConfig("user_mean"),
+    "shadow_no_refresh": VariantConfig("shadow_personal"),
+    "shadow_refresh_a10": VariantConfig("shadow_personal", 0.10),
+    "shadow_refresh_a30": VariantConfig("shadow_personal", 0.30),
+    "split_relaxed_standalone": VariantConfig("standalone", split_profile="relaxed"),
+    "split_relaxed_shadow": VariantConfig("shadow_personal", split_profile="relaxed"),
 }
+
+
+def _apply_split_profile(config, profile: str) -> None:
+    if profile == "historical":
+        return
+    if profile != "relaxed":
+        raise ValueError(f"unknown split profile: {profile}")
+    grouping = config.grouping
+    refinements = config.refinements
+    refinements.verified_split = True
+    grouping.cfl_coherence_threshold = 1.0
+    grouping.cfl_disagreement_cosine_threshold = 1.0
+    refinements.split_min_users = 5
+    refinements.split_min_events = 10
+    refinements.split_holdout_min_users = 2
+    refinements.split_max_groups = 8
+    refinements.split_loss_margin = -0.01
+    refinements.split_pred_posrate_delta_tol = 1.0
+    refinements.split_cohesion_tolerance = 1.0
 
 
 def _json_safe(value: Any) -> Any:
@@ -207,10 +236,13 @@ def _run_one(
     baseline_checkpoints: Mapping[int, Mapping[str, float]],
     early_stop: bool,
 ) -> tuple[dict[str, Any], dict[int, dict[str, float]]]:
-    mode, refresh_alpha = VARIANTS[variant]
+    variant_config = VARIANTS[variant]
+    mode = variant_config.adapter_mode
+    refresh_alpha = variant_config.refresh_alpha
     config = _configured(load_config(dataset=dataset), ECAP_POINTS[dataset], seed)
     config.device = device
     config.grouping.shadow_group_refresh_alpha = refresh_alpha
+    _apply_split_profile(config, variant_config.split_profile)
     learner = SGShareLearner(
         feature_count, config, "full_final", "gradient", mode,
     )
@@ -256,6 +288,7 @@ def _run_one(
         "variant": variant,
         "adapter_mode": mode,
         "refresh_alpha": refresh_alpha,
+        "split_profile": variant_config.split_profile,
         "seed": int(seed),
         "device": device,
         "status": "early_stopped" if stopped_early else "completed",
@@ -350,7 +383,9 @@ def run(
     (output_path / "manifest.json").write_text(json.dumps({
         "dataset": dataset,
         "data": str(data),
-        "variants": list(variants),
+        "variants": {
+            variant: asdict(VARIANTS[variant]) for variant in variants
+        },
         "seeds": [int(seed) for seed in seeds],
         "device": device,
         "max_events": max_events,
@@ -360,8 +395,8 @@ def run(
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="GLOBEM shadow-personal group adapter experiment")
-    parser.add_argument("--dataset", default="globem", choices=("globem",))
+    parser = argparse.ArgumentParser(description="Shadow-personal group adapter experiment")
+    parser.add_argument("--dataset", default="globem", choices=tuple(sorted(TABLE3_KS)))
     parser.add_argument("--data", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--variants", default=",".join(VARIANTS))
