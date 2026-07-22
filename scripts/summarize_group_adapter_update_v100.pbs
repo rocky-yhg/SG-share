@@ -1,0 +1,35 @@
+#!/bin/bash
+#PBS -N summarize_group_mean
+#PBS -q v100q
+#PBS -P 20260209
+#PBS -l select=1:mem=32G:ncpus=8:ngpus=1:host=aimc-gn1
+#PBS -l walltime=01:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+PROJECT=/home/users/zhu_sun/zhuoxuan/Online_Learning_for_Mental_Health_Monitoring_with_Passive_Sensing_Data/code/SG-share
+PYTHON=/scratch/zhu_sun/zhuoxuan/envs/verl_env/bin/python
+
+cd "$PROJECT"
+export PYTHONPATH="$PROJECT"
+
+hostname
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+"$PYTHON" -m unittest discover -s tests -p 'test_group_adapter_update_metrics.py' -v
+"$PYTHON" process/run_group_adapter_update_experiment.py \
+  --dataset ces \
+  --data data/processed/ces_historical_usernorm.csv \
+  --output results/group_adapter_update_20260722/ces \
+  --seeds 42 \
+  --device cuda \
+  --torch-threads 8 \
+  --resume
+"$PYTHON" process/run_group_adapter_update_experiment.py \
+  --dataset globem \
+  --data data/processed/globem_full.csv \
+  --output results/group_adapter_update_20260722/globem \
+  --seeds 42,43,44 \
+  --device cuda \
+  --torch-threads 8 \
+  --resume

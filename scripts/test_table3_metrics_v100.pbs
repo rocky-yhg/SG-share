@@ -1,0 +1,18 @@
+#!/bin/bash
+#PBS -N table3_test
+#PBS -q v100q
+#PBS -P 20260209
+#PBS -l select=1:mem=16G:ncpus=2:ngpus=1:host=aimc-gn1
+#PBS -l walltime=00:10:00
+#PBS -j oe
+
+set -euo pipefail
+
+PROJECT=/home/users/zhu_sun/zhuoxuan/Online_Learning_for_Mental_Health_Monitoring_with_Passive_Sensing_Data/code/SG-share
+PYTHON=/scratch/zhu_sun/zhuoxuan/envs/verl_env/bin/python
+
+cd "$PROJECT"
+export PYTHONPATH="$PROJECT"
+hostname
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+"$PYTHON" -m unittest discover -s tests -p 'test_table3_metrics.py' -v

@@ -80,6 +80,8 @@ class RestoredFullFinalTest(unittest.TestCase):
         )
         self.assertEqual(clusters, [users])
         self.assertEqual(accepted, 0)
+        self.assertEqual(learner._last_split_diagnostics["skipped_geometry"], 1)
+        self.assertEqual(learner._last_split_diagnostics["accepted"], 0)
 
     def test_mature_refinement_runs_on_first_boundary(self):
         cfg = load_config(dataset="synthetic")
@@ -110,6 +112,8 @@ class RestoredFullFinalTest(unittest.TestCase):
         self.assertEqual(learner.regroup_count, 0)
         self.assertGreaterEqual(moves, 1)
         self.assertIn("u0", refined[1])
+        self.assertGreater(learner._last_mature_diagnostics["evaluated_users"], 0)
+        self.assertEqual(learner._last_mature_diagnostics["moves"], moves)
 
     def test_route_signature_uses_raw_persistent_ema(self):
         cfg = load_config(dataset="synthetic")

@@ -1,0 +1,19 @@
+#!/bin/bash
+#PBS -N test_group_diag
+#PBS -q v100q
+#PBS -P 20260209
+#PBS -l select=1:mem=16G:ncpus=4:ngpus=1:host=aimc-gn1
+#PBS -l walltime=00:20:00
+#PBS -j oe
+
+set -euo pipefail
+
+PROJECT=/home/users/zhu_sun/zhuoxuan/Online_Learning_for_Mental_Health_Monitoring_with_Passive_Sensing_Data/code/SG-share
+PYTHON=/scratch/zhu_sun/zhuoxuan/envs/verl_env/bin/python
+
+cd "$PROJECT"
+export PYTHONPATH="$PROJECT"
+
+hostname
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+"$PYTHON" -m unittest discover -s tests -p 'test_restored_full_final.py' -v

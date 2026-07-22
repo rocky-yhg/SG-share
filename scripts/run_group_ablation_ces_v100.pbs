@@ -1,0 +1,35 @@
+#!/bin/bash
+#PBS -N ablate_ces
+#PBS -q v100q
+#PBS -P 20260209
+#PBS -l select=1:mem=64G:ncpus=8:ngpus=1:host=aimc-gn1
+#PBS -l walltime=24:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+PROJECT=/home/users/zhu_sun/zhuoxuan/Online_Learning_for_Mental_Health_Monitoring_with_Passive_Sensing_Data/code/SG-share
+PYTHON=/scratch/zhu_sun/zhuoxuan/envs/verl_env/bin/python
+OUTPUT=${OUTPUT:-results/group_ablation_20260722/ces}
+SEEDS=${SEEDS:-42}
+VARIANTS=${VARIANTS:-without_ggm,without_group_refinement,without_group_splitting,without_user_reassignment}
+
+cd "$PROJECT"
+mkdir -p "$OUTPUT"
+export PYTHONPATH="$PROJECT"
+export OMP_NUM_THREADS=8
+export MKL_NUM_THREADS=8
+
+hostname
+echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-}"
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+
+"$PYTHON" process/run_group_ablation_experiments.py \
+  --dataset ces \
+  --data data/processed/ces_historical_usernorm.csv \
+  --output "$OUTPUT" \
+  --seeds "$SEEDS" \
+  --variants "$VARIANTS" \
+  --device cuda \
+  --torch-threads 8 \
+  --resume 2>&1 | tee "$OUTPUT/run.log"

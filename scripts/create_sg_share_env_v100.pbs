@@ -1,0 +1,22 @@
+#!/bin/bash
+#PBS -N sg_env
+#PBS -q v100q
+#PBS -P 20260209
+#PBS -l select=1:mem=32G:ncpus=4:ngpus=1:host=aimc-gn1
+#PBS -l walltime=01:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+UV=/home/users/zhu_sun/.local/bin/uv
+ENV=/scratch/zhu_sun/zhuoxuan/envs/sg_share_env
+BASE=/scratch/zhu_sun/zhuoxuan/envs/verl_env/bin/python
+
+hostname
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+if [[ ! -x "$ENV/bin/python" ]]; then
+  "$UV" venv --python "$BASE" "$ENV"
+fi
+"$UV" pip install --python "$ENV/bin/python" \
+  numpy pandas scipy scikit-learn xgboost 'torch==2.9.0' PyYAML
+"$ENV/bin/python" -c 'import numpy, pandas, sklearn, xgboost, torch, yaml; print("environment ready", torch.__version__)'

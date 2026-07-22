@@ -33,10 +33,14 @@ class SGShareLearner:
         config: ExperimentConfig,
         method: str = "full_final",
         grouping_signal: str = "gradient",
+        group_adapter_mode: str = "standalone",
     ) -> None:
         self.cfg = copy.deepcopy(config)
         self.method = method
         self.grouping_signal = grouping_signal
+        if group_adapter_mode not in {"standalone", "user_mean"}:
+            raise ValueError(f"unknown group_adapter_mode: {group_adapter_mode}")
+        self.group_adapter_mode = group_adapter_mode
         self.device = torch.device(self.cfg.device)
         random.seed(self.cfg.seed)
         np.random.seed(self.cfg.seed)
@@ -64,6 +68,8 @@ class SGShareLearner:
         self.regroup_count = 0
         self.events: List[Dict[str, object]] = []
         self.group_trace: List[Dict[str, object]] = []
+        self._last_split_diagnostics: Dict[str, int] = {}
+        self._last_mature_diagnostics: Dict[str, int] = {}
         self.route_group_buffer: Dict[str, List[np.ndarray]] = defaultdict(list)
         self.smooth_probabilities: Dict[str, Deque[float]] = defaultdict(
             lambda: deque(maxlen=max(1, self.cfg.training.smoothing_window))
@@ -105,6 +111,26 @@ class SGShareLearner:
             self._ensure_adapter(key)
             return key
         return self._temp_key(uid)
+
+    def _adapter_keys_for_user(self, uid: str) -> List[str]:
+        if (
+            self.group_adapter_mode == "user_mean"
+            and self.method not in {"global_shared", "per_user_adapter"}
+            and uid in self.assignment
+        ):
+            gid = self.assignment[uid]
+            keys = [self._temp_key(member) for member in sorted(self.groups.get(gid, set()))]
+            if keys:
+                return keys
+        return [self._active_adapter(uid)]
+
+    def _forward_with_adapters(
+        self, features: np.ndarray, adapter_keys: Sequence[str],
+    ) -> torch.Tensor:
+        x = self._tensor(features)
+        if len(adapter_keys) == 1:
+            return self.model(x, adapter_keys[0])
+        return self.model.forward_mean(x, adapter_keys)
 
     def _tensor(self, features: np.ndarray) -> torch.Tensor:
         return torch.as_tensor(features, dtype=torch.float32, device=self.device).reshape(1, -1)
@@ -175,8 +201,20 @@ class SGShareLearner:
         gid = self._nearest_group(uid)
         if gid is not None:
             group_key = f"group::{gid}"
-            self._ensure_adapter(group_key)
-            experts[f"group::{gid}"] = base + self.model.adapter_logits_from_hidden(hidden, group_key)
+            if self.group_adapter_mode == "user_mean":
+                member_keys = [
+                    self._temp_key(member)
+                    for member in sorted(self.groups.get(gid, set()))
+                ]
+                if member_keys:
+                    experts[group_key] = base + self.model.adapter_logits_from_hidden_mean(
+                        hidden, member_keys,
+                    )
+            else:
+                self._ensure_adapter(group_key)
+                experts[group_key] = base + self.model.adapter_logits_from_hidden(
+                    hidden, group_key,
+                )
         return experts
 
     def _mix_logits(self, uid: str, experts: Mapping[str, torch.Tensor]) -> tuple[torch.Tensor, Dict[str, float]]:
@@ -215,7 +253,10 @@ class SGShareLearner:
             experts = self._expert_logits(event.features, uid)
             mixed, weights = self._mix_logits(uid, experts)
             return self._apply_bias(mixed, uid, warmup=False), "safe_mix", experts, weights
-        logits = self.model(self._tensor(event.features), active)
+        adapter_keys = self._adapter_keys_for_user(uid)
+        logits = self._forward_with_adapters(event.features, adapter_keys)
+        if self.group_adapter_mode == "user_mean" and uid in self.assignment:
+            active = f"user_mean::{self.assignment[uid]}"
         return self._apply_bias(
             logits, uid, warmup=event.index < grouping.global_warmup_steps,
         ), active, {}, {}
@@ -320,26 +361,29 @@ class SGShareLearner:
 
     def _train_event(self, event: StreamEvent, raw_probability_before_update: float) -> None:
         uid = event.user_id
-        adapter_key = self._active_adapter(uid)
-        self._ensure_adapter(adapter_key)
-        adapter_optimizer = self.adapter_optimizers[adapter_key]
+        adapter_keys = self._adapter_keys_for_user(uid)
+        for adapter_key in adapter_keys:
+            self._ensure_adapter(adapter_key)
         self.model.train()
         self.backbone_optimizer.zero_grad(set_to_none=True)
-        adapter_optimizer.zero_grad(set_to_none=True)
+        for adapter_key in adapter_keys:
+            self.adapter_optimizers[adapter_key].zero_grad(set_to_none=True)
         is_warmup = event.index < self.cfg.grouping.global_warmup_steps
         logits = self._apply_bias(
-            self.model(self._tensor(event.features), adapter_key), uid, warmup=is_warmup,
+            self._forward_with_adapters(event.features, adapter_keys), uid, warmup=is_warmup,
         )
         loss = self._task_loss(logits, event.label)
         loss.backward()
         route_vector = self._update_signature(uid, event.features)
         if is_warmup:
             self.backbone_optimizer.step()
-        adapter_optimizer.step()
+        for adapter_key in adapter_keys:
+            self.adapter_optimizers[adapter_key].step()
         if not is_warmup and route_vector is not None and uid in self.assignment:
             self.route_group_buffer[self.assignment[uid]].append(route_vector)
         self.backbone_optimizer.zero_grad(set_to_none=True)
-        adapter_optimizer.zero_grad(set_to_none=True)
+        for adapter_key in adapter_keys:
+            self.adapter_optimizers[adapter_key].zero_grad(set_to_none=True)
         if self.cfg.refinements.per_user_bias and not is_warmup:
             ref = self.cfg.refinements
             current = self._ensure_user_bias(uid)
@@ -492,16 +536,32 @@ class SGShareLearner:
         step: int,
     ) -> tuple[List[Set[str]], int]:
         ref = self.cfg.refinements
+        diagnostics = {
+            "disabled": 0,
+            "clusters": len(clusters),
+            "skipped_group_limit": 0,
+            "skipped_user_support": 0,
+            "skipped_geometry": 0,
+            "skipped_proposal": 0,
+            "skipped_child_users": 0,
+            "skipped_child_events": 0,
+            "rejected_validation": 0,
+            "accepted": 0,
+        }
         if not ref.verified_split:
+            diagnostics["disabled"] = 1
+            self._last_split_diagnostics = diagnostics
             return list(clusters), 0
         output: List[Set[str]] = []
         accepted = 0
         current_groups = len(clusters)
         for index, cluster in enumerate(clusters):
             if current_groups >= ref.split_max_groups:
+                diagnostics["skipped_group_limit"] += 1
                 output.append(set(cluster))
                 continue
             if len(cluster) < 2 * ref.split_min_users:
+                diagnostics["skipped_user_support"] += 1
                 output.append(set(cluster))
                 continue
             parent_cohesion, parent_min_cosine = self._cluster_signature_stats(
@@ -513,19 +573,23 @@ class SGShareLearner:
                 or parent_cohesion > self.cfg.grouping.cfl_coherence_threshold
                 or parent_min_cosine > self.cfg.grouping.cfl_disagreement_cosine_threshold
             ):
+                diagnostics["skipped_geometry"] += 1
                 output.append(set(cluster))
                 continue
             proposal = binary_split(set(cluster), signatures)
             if proposal is None:
+                diagnostics["skipped_proposal"] += 1
                 output.append(set(cluster))
                 continue
             left, right = proposal
             if min(len(left), len(right)) < ref.split_min_users:
+                diagnostics["skipped_child_users"] += 1
                 output.append(set(cluster))
                 continue
             left_events = sum(len(self.holdout_buffer.get(uid, [])) for uid in left)
             right_events = sum(len(self.holdout_buffer.get(uid, [])) for uid in right)
             if min(left_events, right_events) < ref.split_min_events:
+                diagnostics["skipped_child_events"] += 1
                 output.append(set(cluster))
                 continue
             keys = [f"diagnostic::{step}::{index}::{name}" for name in ("parent", "left", "right")]
@@ -560,7 +624,10 @@ class SGShareLearner:
                 accepted += 1
                 current_groups += 1
             else:
+                diagnostics["rejected_validation"] += 1
                 output.append(set(cluster))
+        diagnostics["accepted"] = accepted
+        self._last_split_diagnostics = diagnostics
         return output, accepted
 
     def _recent_loss(self, uid: str, adapter_key: str) -> float:
@@ -585,11 +652,28 @@ class SGShareLearner:
         ref = self.cfg.refinements
         result = [set(cluster) for cluster in clusters]
         boundary_index = self.regroup_count
-        if (
-            not ref.mature_refine
-            or boundary_index % max(1, ref.mature_every) != 0
-            or len(result) < 2
-        ):
+        diagnostics = {
+            "disabled": int(not ref.mature_refine),
+            "skipped_cadence": 0,
+            "skipped_group_count": 0,
+            "eligible_users": len(eligible),
+            "skipped_observations": 0,
+            "skipped_buffer": 0,
+            "skipped_unassigned": 0,
+            "skipped_singleton": 0,
+            "evaluated_users": 0,
+            "moves": 0,
+        }
+        if not ref.mature_refine:
+            self._last_mature_diagnostics = diagnostics
+            return result, 0
+        if boundary_index % max(1, ref.mature_every) != 0:
+            diagnostics["skipped_cadence"] = 1
+            self._last_mature_diagnostics = diagnostics
+            return result, 0
+        if len(result) < 2:
+            diagnostics["skipped_group_count"] = 1
+            self._last_mature_diagnostics = diagnostics
             return result, 0
         temporary_keys: Dict[int, str] = {}
         for index, cluster in enumerate(result):
@@ -602,15 +686,20 @@ class SGShareLearner:
         sizes = {index: len(cluster) for index, cluster in enumerate(result)}
         moves = 0
         for uid in sorted(eligible):
-            if (
-                self.seen[uid] < ref.mature_min_observations
-                or len(self.recent[uid]) < ref.mature_min_buffer
-                or uid not in cluster_by_user
-            ):
+            if self.seen[uid] < ref.mature_min_observations:
+                diagnostics["skipped_observations"] += 1
+                continue
+            if len(self.recent[uid]) < ref.mature_min_buffer:
+                diagnostics["skipped_buffer"] += 1
+                continue
+            if uid not in cluster_by_user:
+                diagnostics["skipped_unassigned"] += 1
                 continue
             current = cluster_by_user[uid]
             if sizes[current] <= 1:
+                diagnostics["skipped_singleton"] += 1
                 continue
+            diagnostics["evaluated_users"] += 1
             losses = {
                 index: self._recent_loss(uid, key)
                 for index, key in temporary_keys.items()
@@ -628,6 +717,8 @@ class SGShareLearner:
                 sizes[best] += 1
                 cluster_by_user[uid] = best
                 moves += 1
+        diagnostics["moves"] = moves
+        self._last_mature_diagnostics = diagnostics
         return [cluster for cluster in result if cluster], moves
 
     def _initialize_group_adapter(
@@ -635,6 +726,10 @@ class SGShareLearner:
     ) -> None:
         key = f"group::{gid}"
         sources = [source_keys[uid] for uid in sorted(members)]
+        if self.group_adapter_mode == "user_mean":
+            self.model.set_adapter_mean(key, sources)
+            self._reset_adapter_optimizer(key)
+            return
         if created or key not in self.model._external_to_internal:
             self.model.set_adapter_mean(key, sources)
             self._reset_adapter_optimizer(key)
@@ -738,6 +833,14 @@ class SGShareLearner:
             "churn": churn,
             "stop_reason": stop_reason,
             "last_similarity": last_similarity,
+            **{
+                f"split_{key}": value
+                for key, value in self._last_split_diagnostics.items()
+            },
+            **{
+                f"reassignment_{key}": value
+                for key, value in self._last_mature_diagnostics.items()
+            },
         })
 
     def _boundary(self, step: int, initial: bool) -> None:

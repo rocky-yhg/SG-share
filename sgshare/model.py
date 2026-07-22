@@ -111,11 +111,32 @@ class SGModel(nn.Module):
         delta = self.ensure_adapter(adapter_key)(hidden)
         return F.linear(delta, self.head.weight, bias=None)
 
+    def adapter_logits_from_hidden_mean(
+        self, hidden: torch.Tensor, adapter_keys: Iterable[str],
+    ) -> torch.Tensor:
+        adapters = [self.ensure_adapter(key) for key in adapter_keys]
+        if not adapters:
+            raise ValueError("adapter_keys must not be empty")
+        mean_a = torch.stack([adapter.A for adapter in adapters]).mean(dim=0)
+        mean_b = torch.stack([adapter.B for adapter in adapters]).mean(dim=0)
+        delta = ((hidden @ mean_a.t()) @ mean_b.t()) * adapters[0].scale
+        return F.linear(delta, self.head.weight, bias=None)
+
     def logits_from_hidden(self, hidden: torch.Tensor, adapter_key: str) -> torch.Tensor:
         return self.base_logits_from_hidden(hidden) + self.adapter_logits_from_hidden(hidden, adapter_key)
 
+    def logits_from_hidden_mean(
+        self, hidden: torch.Tensor, adapter_keys: Iterable[str],
+    ) -> torch.Tensor:
+        return self.base_logits_from_hidden(hidden) + self.adapter_logits_from_hidden_mean(
+            hidden, adapter_keys,
+        )
+
     def forward(self, x: torch.Tensor, adapter_key: str) -> torch.Tensor:
         return self.logits_from_hidden(self.hidden(x), adapter_key)
+
+    def forward_mean(self, x: torch.Tensor, adapter_keys: Iterable[str]) -> torch.Tensor:
+        return self.logits_from_hidden_mean(self.hidden(x), adapter_keys)
 
     def clone_adapter_state(self, key: str) -> Dict[str, torch.Tensor]:
         return {name: value.detach().clone() for name, value in self.ensure_adapter(key).state_dict().items()}

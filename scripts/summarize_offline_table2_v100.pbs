@@ -1,0 +1,37 @@
+#!/bin/bash
+#PBS -N summarize_offline_t2
+#PBS -q v100q
+#PBS -P 20260209
+#PBS -l select=1:mem=32G:ncpus=8:ngpus=1:host=aimc-gn1
+#PBS -l walltime=01:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+PROJECT=/home/users/zhu_sun/zhuoxuan/Online_Learning_for_Mental_Health_Monitoring_with_Passive_Sensing_Data/code/SG-share
+PYTHON=/scratch/zhu_sun/zhuoxuan/envs/sg_share_env/bin/python
+OUTPUT=results/offline_table2_20260722
+
+cd "$PROJECT"
+export PYTHONPATH="$PROJECT"
+export OMP_NUM_THREADS=8
+export MKL_NUM_THREADS=8
+
+hostname
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+"$PYTHON" -c 'import torch; assert torch.cuda.is_available()'
+"$PYTHON" -m unittest discover -s tests -p 'test_offline_table2_metrics.py' -v
+"$PYTHON" process/run_offline_table2_experiments.py \
+  --datasets ces,globem \
+  --ces-data data/processed/ces_historical_usernorm.csv \
+  --globem-data data/processed/globem_full.csv \
+  --output "$OUTPUT" \
+  --methods transformer,tcn,mlp,xgboost,svm,lr \
+  --seeds 42 \
+  --train-fraction 0.8 \
+  --device cuda \
+  --epochs 50 \
+  --batch-size 128 \
+  --learning-rate 0.001 \
+  --torch-threads 8 \
+  --resume 2>&1 | tee "$OUTPUT/resummarize.log"

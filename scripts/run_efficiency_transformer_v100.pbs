@@ -1,0 +1,55 @@
+#!/bin/bash
+#PBS -N ecap_efficiency_v100
+#PBS -q v100q
+#PBS -P 20260209
+#PBS -l select=1:mem=64G:ncpus=8:ngpus=1:host=aimc-gn1
+#PBS -l walltime=06:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+PROJECT=/home/users/zhu_sun/zhuoxuan/Online_Learning_for_Mental_Health_Monitoring_with_Passive_Sensing_Data/code/SG-share
+PAPER_ROOT=/home/users/zhu_sun/zhuoxuan/Online_Learning_for_Mental_Health_Monitoring_with_Passive_Sensing_Data
+PYTHON=${PYTHON:-/scratch/zhu_sun/zhuoxuan/envs/verl_env/bin/python}
+OUTPUT=${OUTPUT:-results/efficiency_transformer_v100_20260722_gn1}
+DATASETS=${DATASETS:-ces,globem}
+OFFLINE_EPOCHS=${OFFLINE_EPOCHS:-50}
+OFFLINE_BATCH_SIZE=${OFFLINE_BATCH_SIZE:-128}
+OFFLINE_HIDDEN_DIM=${OFFLINE_HIDDEN_DIM:-256}
+OFFLINE_DEPTH=${OFFLINE_DEPTH:-1}
+OFFLINE_HEADS=${OFFLINE_HEADS:-4}
+OFFLINE_LEARNING_RATE=${OFFLINE_LEARNING_RATE:-0.01}
+MAX_EVENTS=${MAX_EVENTS:-}
+
+cd "$PROJECT"
+mkdir -p "$OUTPUT"
+export PYTHONPATH="$PROJECT"
+export OMP_NUM_THREADS=8
+export MKL_NUM_THREADS=8
+
+hostname
+echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-}"
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+
+ARGS=(
+  --datasets "$DATASETS"
+  --device cuda
+  --offline-epochs "$OFFLINE_EPOCHS"
+  --offline-batch-size "$OFFLINE_BATCH_SIZE"
+  --offline-hidden-dim "$OFFLINE_HIDDEN_DIM"
+  --offline-depth "$OFFLINE_DEPTH"
+  --offline-heads "$OFFLINE_HEADS"
+  --offline-learning-rate "$OFFLINE_LEARNING_RATE"
+  --torch-threads 8
+  --output "$OUTPUT"
+)
+if [[ -n "$MAX_EVENTS" ]]; then
+  ARGS+=(--max-events "$MAX_EVENTS")
+fi
+
+"$PYTHON" process/run_efficiency_comparison.py "${ARGS[@]}" \
+  2>&1 | tee "$OUTPUT/run.log"
+
+"$PYTHON" "$PAPER_ROOT/figures/gen_efficiency_figure.py" \
+  --input "$PROJECT/$OUTPUT/efficiency_profile.csv" \
+  --output "$PAPER_ROOT/figures/fig_efficiency"
