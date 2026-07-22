@@ -38,7 +38,7 @@ class SGShareLearner:
         self.cfg = copy.deepcopy(config)
         self.method = method
         self.grouping_signal = grouping_signal
-        if group_adapter_mode not in {"standalone", "user_mean"}:
+        if group_adapter_mode not in {"standalone", "user_mean", "shadow_personal"}:
             raise ValueError(f"unknown group_adapter_mode: {group_adapter_mode}")
         self.group_adapter_mode = group_adapter_mode
         self.device = torch.device(self.cfg.device)
@@ -81,7 +81,24 @@ class SGShareLearner:
         self.threshold_updates = 0
         self.mix_weights: Dict[str, Dict[str, float]] = {}
         self.prototype_initialized: Set[str] = set()
+        self.personal_adapter_update_count: MutableMapping[str, int] = defaultdict(int)
+        self.shadow_update_count: MutableMapping[str, int] = defaultdict(int)
+        self._last_shadow_diagnostics: Dict[str, float | int] = (
+            self._empty_shadow_diagnostics()
+        )
         self._ensure_adapter("global")
+
+    @staticmethod
+    def _empty_shadow_diagnostics() -> Dict[str, float | int]:
+        return {
+            "new_group_inits": 0,
+            "changed_groups": 0,
+            "refreshes": 0,
+            "refresh_skipped_no_donors": 0,
+            "refresh_donors": 0,
+            "refresh_relative_l2_sum": 0.0,
+            "refresh_cosine_distance_sum": 0.0,
+        }
 
     def _ensure_adapter(self, key: str) -> None:
         adapter = self.model.ensure_adapter(key)
@@ -362,28 +379,54 @@ class SGShareLearner:
     def _train_event(self, event: StreamEvent, raw_probability_before_update: float) -> None:
         uid = event.user_id
         adapter_keys = self._adapter_keys_for_user(uid)
+        shadow_key = None
+        if self.group_adapter_mode == "shadow_personal" and uid in self.assignment:
+            shadow_key = self._temp_key(uid)
         for adapter_key in adapter_keys:
             self._ensure_adapter(adapter_key)
+        if shadow_key is not None:
+            self._ensure_adapter(shadow_key)
         self.model.train()
         self.backbone_optimizer.zero_grad(set_to_none=True)
         for adapter_key in adapter_keys:
             self.adapter_optimizers[adapter_key].zero_grad(set_to_none=True)
+        if shadow_key is not None:
+            self.adapter_optimizers[shadow_key].zero_grad(set_to_none=True)
         is_warmup = event.index < self.cfg.grouping.global_warmup_steps
-        logits = self._apply_bias(
-            self._forward_with_adapters(event.features, adapter_keys), uid, warmup=is_warmup,
-        )
+        hidden = None
+        if shadow_key is not None and len(adapter_keys) == 1:
+            hidden = self.model.hidden(self._tensor(event.features))
+            hard_logits = self.model.logits_from_hidden(hidden, adapter_keys[0])
+        else:
+            hard_logits = self._forward_with_adapters(event.features, adapter_keys)
+        logits = self._apply_bias(hard_logits, uid, warmup=is_warmup)
         loss = self._task_loss(logits, event.label)
         loss.backward()
         route_vector = self._update_signature(uid, event.features)
+        if shadow_key is not None and hidden is not None:
+            shadow_logits = self._apply_bias(
+                self.model.detached_backbone_logits_from_hidden(hidden, shadow_key),
+                uid,
+                warmup=is_warmup,
+            )
+            self._task_loss(shadow_logits, event.label).backward()
         if is_warmup:
             self.backbone_optimizer.step()
         for adapter_key in adapter_keys:
             self.adapter_optimizers[adapter_key].step()
+            if adapter_key == self._temp_key(uid):
+                self.personal_adapter_update_count[uid] += 1
+        if shadow_key is not None:
+            self.adapter_optimizers[shadow_key].step()
+            self.personal_adapter_update_count[uid] += 1
+            self.shadow_update_count[uid] += 1
         if not is_warmup and route_vector is not None and uid in self.assignment:
             self.route_group_buffer[self.assignment[uid]].append(route_vector)
         self.backbone_optimizer.zero_grad(set_to_none=True)
         for adapter_key in adapter_keys:
             self.adapter_optimizers[adapter_key].zero_grad(set_to_none=True)
+        if shadow_key is not None:
+            self.adapter_optimizers[shadow_key].zero_grad(set_to_none=True)
         if self.cfg.refinements.per_user_bias and not is_warmup:
             ref = self.cfg.refinements
             current = self._ensure_user_bias(uid)
@@ -721,8 +764,33 @@ class SGShareLearner:
         self._last_mature_diagnostics = diagnostics
         return [cluster for cluster in result if cluster], moves
 
+    @staticmethod
+    def _adapter_state_distance(
+        left: Mapping[str, torch.Tensor], right: Mapping[str, torch.Tensor],
+    ) -> tuple[float, float]:
+        left_vector = torch.cat([left[name].detach().reshape(-1).float() for name in sorted(left)])
+        right_vector = torch.cat([right[name].detach().reshape(-1).float() for name in sorted(right)])
+        relative_l2 = float(
+            torch.linalg.vector_norm(right_vector - left_vector).item()
+            / max(torch.linalg.vector_norm(left_vector).item(), 1e-12)
+        )
+        denominator = float(
+            torch.linalg.vector_norm(left_vector).item()
+            * torch.linalg.vector_norm(right_vector).item()
+        )
+        cosine_distance = (
+            1.0 - float(torch.dot(left_vector, right_vector).item()) / denominator
+            if denominator > 1e-12 else 0.0
+        )
+        return relative_l2, cosine_distance
+
     def _initialize_group_adapter(
-        self, gid: str, members: Set[str], source_keys: Mapping[str, str], created: bool,
+        self,
+        gid: str,
+        members: Set[str],
+        source_keys: Mapping[str, str],
+        created: bool,
+        membership_changed: bool = False,
     ) -> None:
         key = f"group::{gid}"
         sources = [source_keys[uid] for uid in sorted(members)]
@@ -733,8 +801,39 @@ class SGShareLearner:
         if created or key not in self.model._external_to_internal:
             self.model.set_adapter_mean(key, sources)
             self._reset_adapter_optimizer(key)
+            if self.group_adapter_mode == "shadow_personal":
+                self._last_shadow_diagnostics["new_group_inits"] += 1
         else:
             self._ensure_adapter(key)
+            grouping = self.cfg.grouping
+            should_refresh = (
+                self.group_adapter_mode == "shadow_personal"
+                and (
+                    membership_changed
+                    or not grouping.shadow_group_refresh_changed_only
+                )
+                and grouping.shadow_group_refresh_alpha > 0.0
+            )
+            if should_refresh:
+                valid_uids = [
+                    uid for uid in sorted(members)
+                    if self.personal_adapter_update_count[uid]
+                    >= grouping.shadow_group_refresh_min_updates
+                ]
+                if valid_uids:
+                    valid_sources = [source_keys[uid] for uid in valid_uids]
+                    before = self.model.clone_adapter_state(key)
+                    self.model.blend_adapter_with_mean(
+                        key, valid_sources, grouping.shadow_group_refresh_alpha,
+                    )
+                    after = self.model.clone_adapter_state(key)
+                    relative_l2, cosine_distance = self._adapter_state_distance(before, after)
+                    self._last_shadow_diagnostics["refreshes"] += 1
+                    self._last_shadow_diagnostics["refresh_donors"] += len(valid_sources)
+                    self._last_shadow_diagnostics["refresh_relative_l2_sum"] += relative_l2
+                    self._last_shadow_diagnostics["refresh_cosine_distance_sum"] += cosine_distance
+                else:
+                    self._last_shadow_diagnostics["refresh_skipped_no_donors"] += 1
 
     def _initialize_user_from_group(self, uid: str, gid: str) -> None:
         if uid in self.prototype_initialized:
@@ -812,8 +911,13 @@ class SGShareLearner:
         )
         previous = {gid: set(users) for gid, users in self.groups.items()}
         new_groups, self.next_group_index, created = match_clusters(previous, clusters, self.next_group_index)
+        self._last_shadow_diagnostics = self._empty_shadow_diagnostics()
         for gid, members in new_groups.items():
-            self._initialize_group_adapter(gid, members, sources, gid in created)
+            membership_changed = gid in previous and previous[gid] != members
+            self._last_shadow_diagnostics["changed_groups"] += int(membership_changed)
+            self._initialize_group_adapter(
+                gid, members, sources, gid in created, membership_changed,
+            )
         self.groups = new_groups
         self.assignment = {uid: gid for gid, users in self.groups.items() for uid in users}
         for uid, gid in self.assignment.items():
@@ -840,6 +944,10 @@ class SGShareLearner:
             **{
                 f"reassignment_{key}": value
                 for key, value in self._last_mature_diagnostics.items()
+            },
+            **{
+                f"shadow_{key}": value
+                for key, value in self._last_shadow_diagnostics.items()
             },
         })
 
@@ -899,9 +1007,7 @@ class SGShareLearner:
             self._boundary(step, initial=False)
         return row
 
-    def run(self, stream: Sequence[StreamEvent]) -> Dict[str, object]:
-        for event in stream:
-            self.process(event)
+    def summarize(self) -> Dict[str, object]:
         y = [int(row["label"]) for row in self.events]
         predictions = [int(row["prediction"]) for row in self.events]
         post_rows = [row for row in self.events if not bool(row["was_warmup"])]
@@ -920,4 +1026,15 @@ class SGShareLearner:
             "n_events": len(self.events),
             "n_users": len(self.seen),
             "target_variant": "p0_bias_best_cflsplit_a_m005_u10_e50",
+            "group_adapter_mode": self.group_adapter_mode,
+            "personal_adapter_updates": int(sum(self.personal_adapter_update_count.values())),
+            "shadow_updates": int(sum(self.shadow_update_count.values())),
+            "shadow_group_refreshes": int(sum(
+                int(row.get("shadow_refreshes", 0)) for row in self.group_trace
+            )),
         }
+
+    def run(self, stream: Sequence[StreamEvent]) -> Dict[str, object]:
+        for event in stream:
+            self.process(event)
+        return self.summarize()

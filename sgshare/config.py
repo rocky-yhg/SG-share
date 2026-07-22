@@ -76,6 +76,9 @@ class GroupingConfig:
     cold_start_prior_global: float = 0.30
     cold_start_prior_personal: float = 0.50
     cold_start_prior_group: float = 0.20
+    shadow_group_refresh_alpha: float = 0.10
+    shadow_group_refresh_min_updates: int = 1
+    shadow_group_refresh_changed_only: bool = True
 
 
 @dataclass

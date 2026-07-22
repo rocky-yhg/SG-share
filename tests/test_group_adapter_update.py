@@ -62,6 +62,54 @@ class GroupAdapterUpdateTest(unittest.TestCase):
             self.assertTrue(_changed(user_before[uid], _state(learner, f"temp::{uid}")))
         self.assertFalse(_changed(group_before, _state(learner, "group::g0")))
 
+    def test_shadow_personal_updates_group_and_only_event_owner(self) -> None:
+        learner = self._learner("shadow_personal")
+        user_before = {uid: _state(learner, f"temp::{uid}") for uid in ("u0", "u1")}
+        group_before = _state(learner, "group::g0")
+
+        learner._train_event(self._event(), raw_probability_before_update=0.5)
+
+        self.assertTrue(_changed(user_before["u0"], _state(learner, "temp::u0")))
+        self.assertFalse(_changed(user_before["u1"], _state(learner, "temp::u1")))
+        self.assertTrue(_changed(group_before, _state(learner, "group::g0")))
+        self.assertEqual(learner.shadow_update_count["u0"], 1)
+        self.assertEqual(learner.shadow_update_count["u1"], 0)
+
+    def test_shadow_loss_does_not_change_hard_group_update_or_route_signature(self) -> None:
+        standalone = self._learner("standalone")
+        shadow = self._learner("shadow_personal")
+
+        standalone._train_event(self._event(), raw_probability_before_update=0.5)
+        shadow._train_event(self._event(), raw_probability_before_update=0.5)
+
+        for name, value in _state(standalone, "group::g0").items():
+            self.assertTrue(torch.allclose(value, _state(shadow, "group::g0")[name]))
+        self.assertTrue(torch.allclose(
+            torch.as_tensor(standalone.route_signature["u0"]),
+            torch.as_tensor(shadow.route_signature["u0"]),
+        ))
+
+    def test_shadow_group_refresh_only_runs_for_changed_membership(self) -> None:
+        learner = self._learner("shadow_personal")
+        learner.cfg.grouping.shadow_group_refresh_alpha = 0.1
+        learner.personal_adapter_update_count["u0"] = 1
+        learner.personal_adapter_update_count["u1"] = 1
+        with torch.no_grad():
+            learner.model.adapter("temp::u0").B.add_(0.5)
+        sources = {uid: learner._temp_key(uid) for uid in ("u0", "u1")}
+
+        unchanged_before = _state(learner, "group::g0")
+        learner._initialize_group_adapter(
+            "g0", {"u0", "u1"}, sources, created=False, membership_changed=False,
+        )
+        self.assertFalse(_changed(unchanged_before, _state(learner, "group::g0")))
+
+        learner._initialize_group_adapter(
+            "g0", {"u0", "u1"}, sources, created=False, membership_changed=True,
+        )
+        self.assertTrue(_changed(unchanged_before, _state(learner, "group::g0")))
+        self.assertEqual(learner._last_shadow_diagnostics["refreshes"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
