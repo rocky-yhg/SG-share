@@ -79,10 +79,9 @@ full route-gradient agglomerative regroup
 ```
 
 The split and mature refinement are optional post-processing components; they
-are not part of the agglomerative merge itself. Current traces show that the
-historical verified-split settings often accept no split, while mature
-refinement can dominate runtime. For that reason, this repository also exposes
-`full_regroup_no_post` and `incremental_split_merge` as explicit ablations.
+are not part of the agglomerative merge itself. They remain unchanged in the
+regroup on/off comparison below so that the ablation tests the complete online
+regroup module rather than replacing it with another partition algorithm.
 
 ## Prediction and metric protocols
 
@@ -172,23 +171,26 @@ SG-Share exceeds many global methods, but neither dataset supports a claim of
 universal cold-start superiority over the strongest per-user method under
 class-macro or pooled F1.
 
-## Full-regroup component-ablation settings
+## Periodic-regroup component-ablation settings
 
-The current code exposes three directly comparable CES variants:
+The regroup ablation is a strict on/off comparison, not a comparison with a
+split/merge replacement:
 
-| Variant | Partition update | Verified split | Mature refine |
-|---|---|---:|---:|
-| `standalone` | full singleton-to-group regroup | on | on |
-| `full_regroup_no_post` | full singleton-to-group regroup | off | off |
-| `incremental_split_merge` | reuse previous groups; local split/merge | off | off |
+| Variant | Initial grouping at warmup | Periodic regroup after warmup | Other full-final components |
+|---|---:|---:|---|
+| `regroup_on` | on | on, every 100 labeled events | unchanged |
+| `regroup_off` | on | off; freeze the initial partition | unchanged |
 
-This ablation isolates the partition-update mechanism. Both structural variants
-disable the separate verified-split and mature-refinement post-processors, so
-`full_regroup_no_post` versus `incremental_split_merge` changes only how the
-partition is updated. `standalone` remains the complete historical-target
-reference. Use all 35,289 CES events and report seeds 42, 43, and 44 separately
-or as mean +/- standard deviation; do not substitute short-stream screening
-values.
+Both variants construct the same route-gradient initial partition at event 300
+and retain the same TinyTFT backbone, group LoRA, eligibility rule, per-user
+bias, verified-split settings, mature-refinement settings, and prediction
+protocol. The only switch is `periodic_regroup_enabled`. Consequently, the
+comparison measures whether repeatedly refreshing user-to-group assignments is
+useful beyond establishing the initial group-sharing structure. In the off arm,
+group adapters continue to receive online updates, but group membership remains
+fixed after the initial boundary. Use all 35,289 CES events and report seeds 42,
+43, and 44 separately or as mean +/- standard deviation; do not substitute
+short-stream screening values.
 
 Run the ablation with:
 
@@ -197,7 +199,7 @@ python process/run_shadow_personal_globem_experiment.py \
   --dataset ces \
   --data data/processed/ces.csv \
   --output results/ces_regroup_ablation \
-  --variants standalone,full_regroup_no_post,incremental_split_merge \
+  --variants regroup_on,regroup_off \
   --seeds 42,43,44 \
   --device cpu --torch-threads 24
 ```

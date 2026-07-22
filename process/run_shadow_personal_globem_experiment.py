@@ -31,10 +31,15 @@ class VariantConfig:
     split_profile: str = "historical"
     regroup_mode: str = "full"
     disable_mature_refine: bool = False
+    periodic_regroup_enabled: bool = True
 
 
 VARIANTS: Mapping[str, VariantConfig] = {
     "standalone": VariantConfig("standalone"),
+    "regroup_on": VariantConfig("standalone"),
+    "regroup_off": VariantConfig(
+        "standalone", periodic_regroup_enabled=False,
+    ),
     "user_mean": VariantConfig("user_mean"),
     "shadow_no_refresh": VariantConfig("shadow_personal"),
     "shadow_refresh_a10": VariantConfig("shadow_personal", 0.10),
@@ -264,6 +269,7 @@ def _run_one(
     config.device = device
     config.grouping.shadow_group_refresh_alpha = refresh_alpha
     config.grouping.regroup_mode = variant_config.regroup_mode
+    config.grouping.periodic_regroup_enabled = variant_config.periodic_regroup_enabled
     _apply_split_profile(config, variant_config.split_profile)
     if variant_config.disable_mature_refine:
         config.refinements.mature_refine = False
@@ -288,7 +294,12 @@ def _run_one(
         values = _checkpoint(learner.events)
         observed_checkpoints[count] = values
         baseline = baseline_checkpoints.get(count)
-        if early_stop and variant != "standalone" and baseline and count < len(selected_stream):
+        if (
+            early_stop
+            and variant not in {"standalone", "regroup_on"}
+            and baseline
+            and count < len(selected_stream)
+        ):
             margin = 0.03 if count == checkpoints[0] else 0.02
             if (
                 values["configured_f1"] < baseline["configured_f1"] - margin
@@ -386,6 +397,9 @@ def run(
         if "standalone" in seed_variants:
             seed_variants.remove("standalone")
             seed_variants.insert(0, "standalone")
+        elif "regroup_on" in seed_variants:
+            seed_variants.remove("regroup_on")
+            seed_variants.insert(0, "regroup_on")
         baseline_checkpoints: dict[int, dict[str, float]] = {}
         for variant in seed_variants:
             row, checkpoints = _run_one(
@@ -393,7 +407,7 @@ def run(
                 device, max_events, baseline_checkpoints, early_stop,
             )
             all_rows.append(row)
-            if variant == "standalone":
+            if variant in {"standalone", "regroup_on"}:
                 baseline_checkpoints = checkpoints
             pd.DataFrame(all_rows).to_csv(output_path / "summary.csv", index=False)
             print(json.dumps(_json_safe(row), sort_keys=True), flush=True)

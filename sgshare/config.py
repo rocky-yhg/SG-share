@@ -48,6 +48,7 @@ class GroupingConfig:
     individual_warmup_steps: int = 20
     min_observations: int = 20
     regroup_interval: int = 100
+    periodic_regroup_enabled: bool = True
     k_min: int = 4
     min_pair_cosine: float = 0.0
     cfl_coherence_threshold: float = 0.55

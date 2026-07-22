@@ -1091,7 +1091,11 @@ class SGShareLearner:
         interval = self.cfg.grouping.regroup_interval
         if step == warmup:
             self._boundary(step, initial=self.cfg.grouping.warmup_initial_grouping_enabled)
-        elif step > warmup and (step - warmup) % max(1, interval) == 0:
+        elif (
+            self.cfg.grouping.periodic_regroup_enabled
+            and step > warmup
+            and (step - warmup) % max(1, interval) == 0
+        ):
             self._boundary(step, initial=False)
         return row
 
