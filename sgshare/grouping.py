@@ -15,6 +15,21 @@ class AgglomerationResult:
     last_similarity: float
 
 
+@dataclass
+class IncrementalGroupingResult:
+    clusters: List[Set[str]]
+    merges: int
+    split_attempts: int
+    split_accepts: int
+    stop_reason: str
+    last_similarity: float
+    objective_before: float
+    objective_after: float
+    reused_users: int
+    new_users: int
+    similarity_evaluations: int
+
+
 def normalize(vector: np.ndarray) -> np.ndarray:
     value = np.asarray(vector, dtype=np.float64).reshape(-1)
     norm = float(np.linalg.norm(value))
@@ -177,6 +192,143 @@ def binary_split(members: Set[str], signatures: Mapping[str, np.ndarray]) -> tup
     if not left or not right:
         return None
     return left, right
+
+
+def partition_cohesion(
+    clusters: Sequence[Set[str]], signatures: Mapping[str, np.ndarray],
+) -> float:
+    values: List[float] = []
+    for cluster in clusters:
+        center = centroid(cluster, signatures)
+        values.extend(cosine(signatures[user], center) for user in sorted(cluster))
+    return float(np.mean(values)) if values else float("-inf")
+
+
+def incremental_split_merge_groups(
+    users: Sequence[str],
+    signatures: Mapping[str, np.ndarray],
+    previous: Sequence[Set[str]],
+    k_min: int,
+    min_pair_cosine: float = 0.0,
+    split_min_users: int = 4,
+    objective_margin: float = 0.0,
+    max_split_merge_swaps: int = 1,
+) -> IncrementalGroupingResult:
+    """Update a partition with group-level merges and local split-merge swaps.
+
+    Existing groups are retained as the starting point. Newly eligible users enter
+    as singletons, after which only group centroids are compared. A split is
+    accepted only when pairing it with a non-sibling merge improves mean
+    user-to-centroid cosine cohesion.
+    """
+    ordered = [user for user in sorted(users) if user in signatures]
+    allowed = set(ordered)
+    clusters: List[Set[str]] = []
+    reused: Set[str] = set()
+    for old in previous:
+        kept = set(old) & allowed
+        if kept:
+            clusters.append(kept)
+            reused.update(kept)
+    new_users = [user for user in ordered if user not in reused]
+    clusters.extend({user} for user in new_users)
+    if not clusters:
+        return IncrementalGroupingResult(
+            [], 0, 0, 0, "no_signatures", float("nan"), float("nan"),
+            float("nan"), 0, 0, 0,
+        )
+
+    target = max(1, int(k_min))
+    similarity_evaluations = 0
+    merges = 0
+    last_similarity = float("nan")
+
+    def best_pair(groups: Sequence[Set[str]], excluded: Set[frozenset[str]] | None = None):
+        nonlocal similarity_evaluations
+        centers = [centroid(group, signatures) for group in groups]
+        best = None
+        for left in range(len(groups)):
+            for right in range(left + 1, len(groups)):
+                if excluded and frozenset(groups[left] | groups[right]) in excluded:
+                    continue
+                score = cosine(centers[left], centers[right])
+                similarity_evaluations += 1
+                candidate = (score, -left, -right, left, right)
+                if best is None or candidate > best:
+                    best = candidate
+        return None if best is None else (best[0], best[3], best[4])
+
+    while len(clusters) > target:
+        pair = best_pair(clusters)
+        if pair is None:
+            break
+        score, left, right = pair
+        last_similarity = score
+        if score < min_pair_cosine:
+            break
+        merged = clusters[left] | clusters[right]
+        clusters = [
+            group for index, group in enumerate(clusters)
+            if index not in {left, right}
+        ] + [merged]
+        merges += 1
+
+    objective_before = partition_cohesion(clusters, signatures)
+    current_objective = objective_before
+    split_attempts = 0
+    split_accepts = 0
+    for _ in range(max(0, int(max_split_merge_swaps))):
+        candidates = [
+            (partition_cohesion([group], signatures), tuple(sorted(group)), index)
+            for index, group in enumerate(clusters)
+            if len(group) >= max(2, int(split_min_users))
+        ]
+        if not candidates or len(clusters) < 2:
+            break
+        _, _, parent_index = min(candidates)
+        children = binary_split(clusters[parent_index], signatures)
+        split_attempts += 1
+        if children is None:
+            break
+        child_left, child_right = children
+        proposed = [
+            group for index, group in enumerate(clusters) if index != parent_index
+        ] + [child_left, child_right]
+        sibling_union = frozenset(child_left | child_right)
+        pair = best_pair(proposed, {sibling_union})
+        if pair is None:
+            break
+        score, left, right = pair
+        last_similarity = score
+        if score < min_pair_cosine:
+            break
+        merged = proposed[left] | proposed[right]
+        proposed = [
+            group for index, group in enumerate(proposed)
+            if index not in {left, right}
+        ] + [merged]
+        proposed_objective = partition_cohesion(proposed, signatures)
+        if proposed_objective <= current_objective + float(objective_margin):
+            break
+        clusters = proposed
+        current_objective = proposed_objective
+        merges += 1
+        split_accepts += 1
+
+    stop_reason = "incremental_split_merge" if split_accepts else "incremental_reuse"
+    return IncrementalGroupingResult(
+        sorted(clusters, key=lambda group: tuple(sorted(group))),
+        merges,
+        split_attempts,
+        split_accepts,
+        stop_reason,
+        last_similarity,
+        objective_before,
+        current_objective,
+        len(reused),
+        len(new_users),
+        similarity_evaluations,
+    )
 
 
 def match_clusters(

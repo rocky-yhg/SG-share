@@ -29,6 +29,8 @@ class VariantConfig:
     adapter_mode: str
     refresh_alpha: float = 0.0
     split_profile: str = "historical"
+    regroup_mode: str = "full"
+    disable_mature_refine: bool = False
 
 
 VARIANTS: Mapping[str, VariantConfig] = {
@@ -39,11 +41,23 @@ VARIANTS: Mapping[str, VariantConfig] = {
     "shadow_refresh_a30": VariantConfig("shadow_personal", 0.30),
     "split_relaxed_standalone": VariantConfig("standalone", split_profile="relaxed"),
     "split_relaxed_shadow": VariantConfig("shadow_personal", split_profile="relaxed"),
+    "full_regroup_no_post": VariantConfig(
+        "standalone", split_profile="off", disable_mature_refine=True,
+    ),
+    "incremental_split_merge": VariantConfig(
+        "standalone",
+        split_profile="off",
+        regroup_mode="incremental_split_merge",
+        disable_mature_refine=True,
+    ),
 }
 
 
 def _apply_split_profile(config, profile: str) -> None:
     if profile == "historical":
+        return
+    if profile == "off":
+        config.refinements.verified_split = False
         return
     if profile != "relaxed":
         raise ValueError(f"unknown split profile: {profile}")
@@ -208,6 +222,13 @@ def _trace_diagnostics(learner: SGShareLearner) -> dict[str, Any]:
         "shadow_mean_refresh_cosine_distance": (
             total("shadow_refresh_cosine_distance_sum") / refreshes if refreshes else 0.0
         ),
+        "incremental_boundaries": int(total("incremental_enabled")),
+        "incremental_split_attempts": int(total("incremental_split_attempts")),
+        "incremental_split_accepts": int(total("incremental_split_accepts")),
+        "incremental_reused_users": int(total("incremental_reused_users")),
+        "incremental_new_users": int(total("incremental_new_users")),
+        "incremental_similarity_evaluations": int(total("incremental_similarity_evaluations")),
+        "incremental_inherited_adapters": int(total("incremental_inherited_adapters")),
     }
     return output
 
@@ -242,7 +263,10 @@ def _run_one(
     config = _configured(load_config(dataset=dataset), ECAP_POINTS[dataset], seed)
     config.device = device
     config.grouping.shadow_group_refresh_alpha = refresh_alpha
+    config.grouping.regroup_mode = variant_config.regroup_mode
     _apply_split_profile(config, variant_config.split_profile)
+    if variant_config.disable_mature_refine:
+        config.refinements.mature_refine = False
     learner = SGShareLearner(
         feature_count, config, "full_final", "gradient", mode,
     )
@@ -289,6 +313,7 @@ def _run_one(
         "adapter_mode": mode,
         "refresh_alpha": refresh_alpha,
         "split_profile": variant_config.split_profile,
+        "regroup_mode": variant_config.regroup_mode,
         "seed": int(seed),
         "device": device,
         "status": "early_stopped" if stopped_early else "completed",

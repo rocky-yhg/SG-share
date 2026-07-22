@@ -13,7 +13,15 @@ from torch.nn import functional as F
 
 from .config import ExperimentConfig
 from .data import StreamEvent
-from .grouping import agglomerative_groups, binary_split, cosine, match_clusters, normalize, random_groups
+from .grouping import (
+    agglomerative_groups,
+    binary_split,
+    cosine,
+    incremental_split_merge_groups,
+    match_clusters,
+    normalize,
+    random_groups,
+)
 from .metrics import binary_metrics, first_k_metrics
 from .model import SGModel, weighted_focal_loss
 
@@ -791,6 +799,7 @@ class SGShareLearner:
         source_keys: Mapping[str, str],
         created: bool,
         membership_changed: bool = False,
+        inherit_adapter_key: str | None = None,
     ) -> None:
         key = f"group::{gid}"
         sources = [source_keys[uid] for uid in sorted(members)]
@@ -799,7 +808,15 @@ class SGShareLearner:
             self._reset_adapter_optimizer(key)
             return
         if created or key not in self.model._external_to_internal:
-            self.model.set_adapter_mean(key, sources)
+            if (
+                inherit_adapter_key is not None
+                and inherit_adapter_key in self.model._external_to_internal
+            ):
+                self.model.set_adapter_state(
+                    key, self.model.clone_adapter_state(inherit_adapter_key),
+                )
+            else:
+                self.model.set_adapter_mean(key, sources)
             self._reset_adapter_optimizer(key)
             if self.group_adapter_mode == "shadow_personal":
                 self._last_shadow_diagnostics["new_group_inits"] += 1
@@ -864,6 +881,8 @@ class SGShareLearner:
         eligible = [uid for uid in eligible if uid in projected_signatures]
         if not eligible:
             return
+        incremental_result = None
+        grouping = self.cfg.grouping
         if self.method == "one_group_adapter":
             clusters = [set(eligible)]
             stop_reason = "forced_one_group"
@@ -894,6 +913,24 @@ class SGShareLearner:
             stop_reason = "warmup_forced_target"
             merges = result.merges
             last_similarity = result.last_similarity
+        elif grouping.regroup_mode == "incremental_split_merge" and self.groups:
+            previous_clusters = [
+                set(members) & set(eligible) for members in self.groups.values()
+            ]
+            incremental_result = incremental_split_merge_groups(
+                eligible,
+                projected_signatures,
+                [cluster for cluster in previous_clusters if cluster],
+                grouping.k_min,
+                grouping.min_pair_cosine,
+                grouping.incremental_split_min_users,
+                grouping.incremental_objective_margin,
+                grouping.incremental_max_split_merge_swaps,
+            )
+            clusters = incremental_result.clusters
+            stop_reason = incremental_result.stop_reason
+            merges = incremental_result.merges
+            last_similarity = incremental_result.last_similarity
         else:
             result = agglomerative_groups(
                 eligible, projected_signatures,
@@ -903,21 +940,49 @@ class SGShareLearner:
             stop_reason = result.stop_reason
             merges = result.merges
             last_similarity = result.last_similarity
-        clusters, split_count = self._verified_splits(
-            clusters, raw_signatures, sources, step,
-        )
+        if incremental_result is None:
+            clusters, split_count = self._verified_splits(
+                clusters, raw_signatures, sources, step,
+            )
+        else:
+            split_count = incremental_result.split_accepts
+            self._last_split_diagnostics = {
+                "disabled": 1,
+                "clusters": len(clusters),
+                "accepted": 0,
+            }
         clusters, mature_moves = self._mature_refine_clusters(
             clusters, eligible, sources, step,
         )
         previous = {gid: set(users) for gid, users in self.groups.items()}
         new_groups, self.next_group_index, created = match_clusters(previous, clusters, self.next_group_index)
+        inherited_adapters = 0
+        inherit_by_gid: Dict[str, str] = {}
+        if incremental_result is not None:
+            for gid in created:
+                members = new_groups[gid]
+                candidates = [
+                    (len(members & old_members), old_gid)
+                    for old_gid, old_members in previous.items()
+                    if f"group::{old_gid}" in self.model._external_to_internal
+                ]
+                if candidates:
+                    overlap, old_gid = max(candidates, key=lambda item: (item[0], item[1]))
+                    if overlap > 0:
+                        inherit_by_gid[gid] = f"group::{old_gid}"
         self._last_shadow_diagnostics = self._empty_shadow_diagnostics()
         for gid, members in new_groups.items():
             membership_changed = gid in previous and previous[gid] != members
             self._last_shadow_diagnostics["changed_groups"] += int(membership_changed)
             self._initialize_group_adapter(
-                gid, members, sources, gid in created, membership_changed,
+                gid,
+                members,
+                sources,
+                gid in created,
+                membership_changed,
+                inherit_by_gid.get(gid),
             )
+            inherited_adapters += int(gid in inherit_by_gid)
         self.groups = new_groups
         self.assignment = {uid: gid for gid, users in self.groups.items() for uid in users}
         for uid, gid in self.assignment.items():
@@ -937,6 +1002,29 @@ class SGShareLearner:
             "churn": churn,
             "stop_reason": stop_reason,
             "last_similarity": last_similarity,
+            "incremental_enabled": int(incremental_result is not None),
+            "incremental_split_attempts": (
+                incremental_result.split_attempts if incremental_result is not None else 0
+            ),
+            "incremental_split_accepts": (
+                incremental_result.split_accepts if incremental_result is not None else 0
+            ),
+            "incremental_objective_before": (
+                incremental_result.objective_before if incremental_result is not None else float("nan")
+            ),
+            "incremental_objective_after": (
+                incremental_result.objective_after if incremental_result is not None else float("nan")
+            ),
+            "incremental_reused_users": (
+                incremental_result.reused_users if incremental_result is not None else 0
+            ),
+            "incremental_new_users": (
+                incremental_result.new_users if incremental_result is not None else 0
+            ),
+            "incremental_similarity_evaluations": (
+                incremental_result.similarity_evaluations if incremental_result is not None else 0
+            ),
+            "incremental_inherited_adapters": inherited_adapters,
             **{
                 f"split_{key}": value
                 for key, value in self._last_split_diagnostics.items()

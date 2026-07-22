@@ -79,6 +79,10 @@ class GroupingConfig:
     shadow_group_refresh_alpha: float = 0.10
     shadow_group_refresh_min_updates: int = 1
     shadow_group_refresh_changed_only: bool = True
+    regroup_mode: str = "full"
+    incremental_split_min_users: int = 4
+    incremental_objective_margin: float = 0.0
+    incremental_max_split_merge_swaps: int = 1
 
 
 @dataclass
