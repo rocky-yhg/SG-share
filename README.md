@@ -41,17 +41,64 @@ The implemented group path is:
    train and predict through their assigned group adapter; in the default
    `standalone` mode, their temporary personal adapter is not updated afterward.
 
-For the tuned CES point used by the current runners:
+### Dataset-specific classification-tuned configuration
 
-```text
-route-gradient EMA alpha = 0.20  (decay = 0.80)
-eligibility observations = 20
-k_min = 4
-global warmup = 300 events
-regroup interval = 100 events
-minimum merge cosine = 0.0
-LoRA rank / alpha = 4 / 8
-```
+The main experiment runners resolve the dataset YAML and then apply the
+classification-tuned point in `process/run_table3_experiments.py`. The resulting
+settings are:
+
+| Parameter | CES | GLOBEM |
+|---|---:|---:|
+| TinyTFT hidden dimension / depth / heads | 32 / 2 / 4 | 16 / 1 / 2 |
+| LoRA rank / alpha | 4 / 8 | 4 / 8 |
+| Backbone learning rate | 0.0002 | 0.0003 |
+| Group-adapter learning rate | 0.007 | 0.005 |
+| Focal gamma / alpha | 2.0 / 0.75 | 2.0 / 0.75 |
+| Positive-class loss weight | 5.0 | 5.0 |
+| Route-gradient EMA alpha / decay | 0.20 / 0.80 | 0.20 / 0.80 |
+| Normalize route gradient before EMA | no | no |
+| Eligibility observations (`lambda`) | 20 | 2 |
+| Individual warmup observations | 20 | 2 |
+| Initial grouping boundary | event 300 | event 120 |
+| Periodic regroup interval | 100 events | 120 events |
+| Agglomerative lower bound (`k_min`) | 4 | 4 |
+| Minimum merge cosine | 0.0 | 0.0 |
+| Warmup signature count | 10 | 5 |
+| Smoothing window | 5 | 3 |
+| Threshold mode / default | in-window / 0.5 | in-window / 0.5 |
+| Threshold history / refresh interval | 1000 / 100 | 500 / 50 |
+| User-posrate threshold correction | off | on, alpha 0.09 |
+| Cold-safe mixing eta | 0.50 | 0.25 |
+| Global / personal / group cold prior | 0.30 / 0.50 / 0.20 | 0.05 / 0.25 / 0.70 |
+| Configured learner first-K values | 5, 10, 20, 50 | 5, 10 |
+| `run_table3_experiments.py` summary K values | 5, 10, 20 | 5, 10 |
+
+The base YAML stores a route-gradient decay of `0.95` for both datasets and a
+GLOBEM minimum-observation value of `5`. These are initialization defaults, not
+the classification-tuned experiment values. `_configured(...)` overrides them
+with `ECAP_POINTS`: `(alpha=0.20, lambda=20, k_min=4)` for CES and
+`(alpha=0.20, lambda=2, k_min=4)` for GLOBEM. Every run writes its fully resolved
+configuration to `config.json`; that file is authoritative for a numerical
+result.
+
+The following `full_final` settings are shared by CES and GLOBEM:
+
+| Component | Resolved setting |
+|---|---|
+| Optimizer regularization | weight decay `1e-4` |
+| Backbone online update | LR scale `0.3`; route-gradient clip norm `1.0` |
+| Warmup fallback | minimum samples `5`, fallback `1`; minimum eligible users `10`, fallback `2` |
+| Warmup group range | minimum `2`, maximum `12`; force initial acceptance on |
+| Prototype initialization | enabled; minimum samples `3`; blend alpha `0.35` |
+| Per-user bias | enabled; LR `0.005`; L2 `0.001`; clip `2.0`; group-mean initialization weight `0.5` |
+| Verified split | enabled; loss margin `0.005`; minimum users `10`; minimum events `50`; minimum holdout users `5`; maximum groups `8` |
+| Split guards | positive-rate tolerance `0.10`; cohesion tolerance `0.05`; no recent-buffer fallback |
+| Mature-user refinement | enabled at `20` observations; minimum buffer `5`; loss margin `0.01`; evaluate every `10` events |
+| Cold-safe mixing horizon | first `20` observations |
+
+Thus, `lambda` is dataset-specific (`20` for CES and `2` for GLOBEM), while
+the mature-refinement threshold remains `20` on both datasets. These parameters
+must not be treated as the same gate.
 
 `k_min=4` is a lower bound on the number of agglomerative groups, not a minimum
 number of observations and not a minimum group size. A regular regroup can stop
@@ -178,19 +225,26 @@ split/merge replacement:
 
 | Variant | Initial grouping at warmup | Periodic regroup after warmup | Other full-final components |
 |---|---:|---:|---|
-| `regroup_on` | on | on, every 100 labeled events | unchanged |
+| `regroup_on` | on | on, at the dataset-specific interval | unchanged |
 | `regroup_off` | on | off; freeze the initial partition | unchanged |
 
-Both variants construct the same route-gradient initial partition at event 300
-and retain the same TinyTFT backbone, group LoRA, eligibility rule, per-user
-bias, verified-split settings, mature-refinement settings, and prediction
-protocol. The only switch is `periodic_regroup_enabled`. Consequently, the
-comparison measures whether repeatedly refreshing user-to-group assignments is
-useful beyond establishing the initial group-sharing structure. In the off arm,
-group adapters continue to receive online updates, but group membership remains
-fixed after the initial boundary. Use all 35,289 CES events and report seeds 42,
-43, and 44 separately or as mean +/- standard deviation; do not substitute
-short-stream screening values.
+The dataset-specific schedules are:
+
+| Dataset | Processed stream | Events | Initial grouping | Regroup-on interval |
+|---|---|---:|---:|---:|
+| CES | `data/processed/ces.csv` | 35,289 | event 300 | 100 events |
+| GLOBEM | `data/processed/globem.csv` | 8,225 | event 120 | 120 events |
+
+Within each dataset, both variants construct the same route-gradient initial
+partition and retain the same TinyTFT backbone, group LoRA, eligibility rule,
+per-user bias, verified-split settings, mature-refinement settings, and
+prediction protocol. The only switch is `periodic_regroup_enabled`.
+Consequently, the comparison measures whether repeatedly refreshing
+user-to-group assignments is useful beyond establishing the initial
+group-sharing structure. In the off arm, group adapters continue to receive
+online updates, but group membership remains fixed after the initial boundary.
+Use the complete processed streams; do not substitute short-stream screening
+values.
 
 Run the ablation with:
 
@@ -202,6 +256,14 @@ python process/run_shadow_personal_globem_experiment.py \
   --variants regroup_on,regroup_off \
   --seeds 42,43,44 \
   --device cpu --torch-threads 24
+
+python process/run_shadow_personal_globem_experiment.py \
+  --dataset globem \
+  --data data/processed/globem.csv \
+  --output results/globem_regroup_ablation \
+  --variants regroup_on,regroup_off \
+  --seeds 42,43,44 \
+  --device cuda --torch-threads 12
 ```
 
 ## Installation and validation
