@@ -47,11 +47,17 @@ both global and per-user scopes, use:
 bash scripts/run_named_reproduction.sh data/processed results/named_reproduction
 ```
 
+The default seed protocol is CES `42` and GLOBEM `42,43,44`, matching the
+stored comparison artifacts. Override these independently with `CES_SEEDS` and
+`GLOBEM_SEEDS`, or set `SEEDS` to force one shared seed list.
+
 The script reads `data/processed/ces.csv` and
 `data/processed/globem.csv`; it never creates, copies, replaces, or commits
 those files. SOTA predictions use raw probability, fixed threshold `0.5`, no
-probability smoothing, and no threshold search. The implementations retain the
-fidelity boundaries documented in
+probability smoothing, and no threshold search. CES SOTA runs use the shared
+causal online standardizer from the stored comparison protocol; GLOBEM SOTA
+runs consume the already normalized stored features. The implementations retain
+the fidelity boundaries documented in
 [Online SOTA reproduction](ONLINE_SOTA_REPRODUCTION.md): OLI2DS, HBP/ODL, and
 KOIL are source-grounded ports; OBAL is an independent mechanism
 reproduction; OLIFL and OLFL are compatibility analyses rather than official

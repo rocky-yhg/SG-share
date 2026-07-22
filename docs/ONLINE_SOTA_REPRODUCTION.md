@@ -31,16 +31,29 @@ are compatibility analyses, not official numerical reproductions.
 
 ```bash
 python process/run_online_sota_suite.py \
-  --datasets ces,globem \
+  --datasets ces \
   --methods oli2ds,obal,hbp,koil,olifl,olfl \
-  --scopes global,per_user --raw-fixed-05 --no-scaling \
+  --scopes global,per_user --raw-fixed-05 \
   --seeds 42 \
   --ces-data data/processed/ces.csv \
+  --output results/online_sota_raw05/ces
+
+python process/run_online_sota_suite.py \
+  --datasets globem \
+  --methods oli2ds,obal,hbp,koil,olifl,olfl \
+  --scopes global,per_user --raw-fixed-05 --no-scaling \
+  --seeds 42,43,44 \
   --globem-data data/processed/globem.csv \
-  --output results/online_sota_raw05
+  --output results/online_sota_raw05/globem
 
 python process/summarize_online_sota_suite.py
 ```
+
+The preprocessing flags reproduce the stored comparison protocol: CES uses a
+single causal online standardizer shared by every SOTA method, whereas GLOBEM
+consumes the already normalized historical feature stream with `--no-scaling`.
+Changing this distinction changes the input representation and therefore does
+not reproduce the published result artifacts.
 
 Participant-level streams are intentionally not committed. A complete GLOBEM
 comparison requires the protected full stream at the path supplied through

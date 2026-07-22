@@ -3,7 +3,9 @@ set -euo pipefail
 
 DATA_ROOT="${1:-data/processed}"
 OUTPUT_ROOT="${2:-results/named_reproduction}"
-SEEDS="${SEEDS:-42}"
+SEEDS="${SEEDS:-}"
+CES_SEEDS="${CES_SEEDS:-${SEEDS:-42}}"
+GLOBEM_SEEDS="${GLOBEM_SEEDS:-${SEEDS:-42,43,44}}"
 DEVICE="${DEVICE:-cpu}"
 THREADS="${THREADS:-1}"
 
@@ -18,24 +20,37 @@ for path in "${CES_DATA}" "${GLOBEM_DATA}"; do
 done
 
 python process/run_online_sota_suite.py \
-  --datasets ces,globem \
+  --datasets ces \
   --methods oli2ds,obal,hbp,koil,olifl,olfl \
   --scopes global,per_user \
-  --seeds "${SEEDS}" \
-  --output "${OUTPUT_ROOT}/online_sota_raw05" \
+  --seeds "${CES_SEEDS}" \
+  --output "${OUTPUT_ROOT}/online_sota_raw05/ces" \
   --ces-data "${CES_DATA}" \
+  --raw-fixed-05
+
+python process/run_online_sota_suite.py \
+  --datasets globem \
+  --methods oli2ds,obal,hbp,koil,olifl,olfl \
+  --scopes global,per_user \
+  --seeds "${GLOBEM_SEEDS}" \
+  --output "${OUTPUT_ROOT}/online_sota_raw05/globem" \
   --globem-data "${GLOBEM_DATA}" \
   --no-scaling --raw-fixed-05
 
 for dataset in ces globem; do
   data_var="${DATA_ROOT}/${dataset}.csv"
+  if [[ "${dataset}" == "ces" ]]; then
+    dataset_seeds="${CES_SEEDS}"
+  else
+    dataset_seeds="${GLOBEM_SEEDS}"
+  fi
   for preset in classification_tuned cold_safe; do
     python process/run_sg_share_named_preset.py \
       --dataset "${dataset}" \
       --preset "${preset}" \
       --data "${data_var}" \
       --output "${OUTPUT_ROOT}/sgshare" \
-      --seeds "${SEEDS}" \
+      --seeds "${dataset_seeds}" \
       --device "${DEVICE}" \
       --torch-threads "${THREADS}"
   done
