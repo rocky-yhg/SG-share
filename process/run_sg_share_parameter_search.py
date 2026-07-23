@@ -19,6 +19,7 @@ if str(ROOT) not in sys.path:
 from sgshare.config import ExperimentConfig, apply_variant, load_config
 from sgshare.data import load_stream
 from sgshare.learner import SGShareLearner
+from sgshare.presets import PRESETS, apply_named_preset
 
 
 @dataclass(frozen=True)
@@ -262,10 +263,16 @@ def run_search(dataset: str, data: str | Path, output: str | Path, seed: int,
                skip_existing: bool, gradient_modes: Sequence[str] = ("raw", "norm"),
                eligibility_modes: Sequence[str] = ("legacy", "strict"),
                max_events: int | None = None, search_strategy: str = "sequential",
-               torch_threads: int = 1) -> dict[str, Any]:
+               torch_threads: int = 1, base_preset: str | None = None,
+               device: str = "cpu") -> dict[str, Any]:
     root = Path(output)
     root.mkdir(parents=True, exist_ok=True)
     base = load_config(dataset=dataset)
+    if base_preset:
+        base, _ = apply_named_preset(base, base_preset)
+    base.device = device
+    if device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA requested but unavailable")
     stream, feature_names = load_stream(data, legacy_global_scaling=False, no_scaling=True)
     if max_events is not None and max_events > 0:
         stream = stream[:max_events]
@@ -395,6 +402,8 @@ def run_search(dataset: str, data: str | Path, output: str | Path, seed: int,
         "max_events": max_events,
         "search_strategy": search_strategy,
         "torch_threads": torch_threads,
+        "base_preset": base_preset,
+        "device": device,
         "selection_rules": {
             "cold_start": {
                 "constraints": "overall F1 >= baseline-0.003 and specificity >= baseline-0.01",
@@ -430,6 +439,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--max-events", type=int)
     parser.add_argument("--search-strategy", choices=["sequential", "one_factor"], default="sequential")
     parser.add_argument("--torch-threads", type=int, default=1)
+    parser.add_argument(
+        "--base-preset",
+        choices=tuple(sorted({name for _, name in PRESETS})),
+        help="Apply a named SG-Share preset before varying search parameters.",
+    )
+    parser.add_argument("--device", default="cpu", choices=("cpu", "cuda"))
     parser.add_argument("--skip-existing", action="store_true")
     args = parser.parse_args(argv)
     payload = run_search(
@@ -439,6 +454,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         [part.strip().lower() for part in args.gradient_modes.split(",") if part.strip()],
         [part.strip().lower() for part in args.eligibility_modes.split(",") if part.strip()],
         args.max_events, args.search_strategy, args.torch_threads,
+        args.base_preset, args.device,
     )
     print(json.dumps(payload, indent=2, sort_keys=True))
 

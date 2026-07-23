@@ -18,5 +18,5 @@ if [[ ! -x "$ENV/bin/python" ]]; then
   "$UV" venv --python "$BASE" "$ENV"
 fi
 "$UV" pip install --python "$ENV/bin/python" \
-  numpy pandas scipy scikit-learn xgboost 'torch==2.9.0' PyYAML
+  numpy pandas scipy scikit-learn xgboost lightgbm 'torch==2.9.0' PyYAML
 "$ENV/bin/python" -c 'import numpy, pandas, sklearn, xgboost, torch, yaml; print("environment ready", torch.__version__)'

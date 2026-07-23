@@ -14,21 +14,24 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from process.run_sg_share_parameter_search import SearchPoint, _configured
+from process.run_sg_share_parameter_search import SearchPoint
 from sgshare.config import load_config
 from sgshare.data import load_stream
 from sgshare.learner import SGShareLearner
 from sgshare.metrics import binary_metrics
 from sgshare.online_sota import OnlineSOTALearner
+from sgshare.presets import apply_named_preset
 
 
-BASELINES = ("hbp", "koil", "oli2ds", "olifl")
+BASELINES = ("hbp", "koil", "olfl", "oli2ds", "olifl")
 TABLE3_KS = {"ces": (5, 10, 20), "globem": (5, 10)}
+# Compatibility center for older diagnostic runners. Table 3 itself resolves
+# the `cold_safe` named preset below.
 ECAP_POINTS = {
-    "ces": SearchPoint(0.20, 20, 4, False, "table3", False),
-    "globem": SearchPoint(0.20, 2, 4, False, "table3", False),
+    "ces": SearchPoint(0.20, 20, 5, False, "classification_tuned", False),
+    "globem": SearchPoint(0.10, 2, 5, False, "classification_tuned", False),
 }
-METRICS = ("accuracy", "precision", "recall", "macro_f1", "auc")
+METRICS = ("accuracy", "precision_pos", "recall_pos", "f1_pos", "auc")
 
 
 def _json_safe(value: Any) -> Any:
@@ -70,7 +73,9 @@ def _auc(labels: Sequence[int], scores: Sequence[float]) -> float:
 
 
 def _first_k_rows(events: pd.DataFrame, ks: Sequence[int]) -> list[dict[str, float]]:
-    required = {"event_index", "user_id", "label", "raw_probability"}
+    required = {
+        "event_index", "user_id", "label", "prediction", "probability",
+    }
     missing = required - set(events.columns)
     if missing:
         raise ValueError(f"events are missing columns: {sorted(missing)}")
@@ -89,13 +94,13 @@ def _first_k_rows(events: pd.DataFrame, ks: Sequence[int]) -> list[dict[str, flo
                 continue
             subset = rows.iloc[:k]
             labels = subset["label"].astype(int).to_numpy()
-            probabilities = subset["raw_probability"].astype(float).to_numpy()
-            predictions = (probabilities >= 0.5).astype(int)
+            probabilities = subset["probability"].astype(float).to_numpy()
+            predictions = subset["prediction"].astype(int).to_numpy()
             binary = binary_metrics(labels, predictions)
             values["accuracy"].append(float(binary["accuracy"]))
-            values["precision"].append(float(binary["precision"]))
-            values["recall"].append(float(binary["recall"]))
-            values["macro_f1"].append(float(binary["f1"]))
+            values["precision_pos"].append(float(binary["precision"]))
+            values["recall_pos"].append(float(binary["recall"]))
+            values["f1_pos"].append(float(binary["f1"]))
             auc = _auc(labels, probabilities)
             if np.isfinite(auc):
                 values["auc"].append(float(auc))
@@ -132,7 +137,8 @@ def _run_one(
     config = load_config(dataset=dataset)
     config.seed = int(seed)
     if method == "ecap":
-        config = _configured(config, ECAP_POINTS[dataset], seed)
+        config, _ = apply_named_preset(config, "cold_safe")
+        config.seed = int(seed)
         config.device = device
         if device == "cuda" and not torch.cuda.is_available():
             raise RuntimeError("ECAP requested CUDA, but no CUDA device is available")
@@ -208,8 +214,8 @@ def run(
         "methods": list(methods),
         "seeds": [int(seed) for seed in seeds],
         "ks": list(TABLE3_KS[dataset]),
-        "prediction": "raw_probability >= 0.5",
-        "aggregation": "mean of per-user first-K metrics",
+        "prediction": "each method's recorded configured deployment prediction",
+        "aggregation": "mean of per-user positive-class first-K metrics",
         "auc": "mean across users whose first-K labels contain both classes",
         "ecap_device": device,
     }

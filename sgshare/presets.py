@@ -15,6 +15,9 @@ class NamedPreset:
     k_min: int
     normalize_route_gradient: bool = False
     strict_initial_eligibility: bool = False
+    verified_split: bool = False
+    mature_min_observations: int = 20
+    mature_loss_margin: float = 0.01
 
     def to_dict(self) -> Dict[str, object]:
         return asdict(self)
@@ -22,17 +25,16 @@ class NamedPreset:
 
 PRESETS: Dict[tuple[str, str], NamedPreset] = {
     ("ces", "classification_tuned"): NamedPreset(
-        "ces", "classification_tuned", 0.20, 20, 4,
+        "ces", "classification_tuned", 0.20, 20, 5,
     ),
     ("ces", "cold_safe"): NamedPreset(
-        "ces", "cold_safe", 0.05, 20, 4,
+        "ces", "cold_safe", 0.05, 20, 3,
     ),
     ("globem", "classification_tuned"): NamedPreset(
-        "globem", "classification_tuned", 0.20, 2, 4,
+        "globem", "classification_tuned", 0.10, 2, 5,
     ),
     ("globem", "cold_safe"): NamedPreset(
-        "globem", "cold_safe", 0.20, 2, 4,
-        strict_initial_eligibility=True,
+        "globem", "cold_safe", 0.12, 2, 4,
     ),
 }
 
@@ -56,6 +58,11 @@ def apply_named_preset(
     )
     resolved.grouping.min_observations = preset.eligibility_lambda
     resolved.grouping.k_min = preset.k_min
+    resolved.refinements.verified_split = preset.verified_split
+    resolved.refinements.mature_min_observations = (
+        preset.mature_min_observations
+    )
+    resolved.refinements.mature_loss_margin = preset.mature_loss_margin
     if preset.strict_initial_eligibility:
         resolved.grouping.warmup_initial_min_samples = preset.eligibility_lambda
         resolved.grouping.warmup_initial_min_samples_fallback = (

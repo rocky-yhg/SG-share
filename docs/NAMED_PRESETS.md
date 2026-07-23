@@ -1,83 +1,81 @@
-# Classification-tuned and cold-safe presets
+# Manuscript-aligned SG-Share presets
 
-The named presets reproduce the parameter points selected by the recovered
-parameter-search and confirmation runs. They change only the route-gradient EMA
-alpha, the observation eligibility threshold (`lambda`), `k_min`, and whether
-the initial eligibility threshold is strict. All other settings come from the
-dataset YAML and the `full_final` method.
+The registry in `sgshare/presets.py` is the executable source of truth for the
+SG-Share configurations used by the current `main.pdf`. The full-stream table
+and the early-monitoring table use different selected points.
 
-| Dataset | Preset | EMA alpha | EMA decay | Lambda | `k_min` | Initial eligibility |
-|---|---|---:|---:|---:|---:|---|
-| CES | `classification_tuned` | 0.20 | 0.80 | 20 | 4 | legacy: minimum 5, fallback 1 |
-| CES | `cold_safe` | 0.05 | 0.95 | 20 | 4 | legacy: minimum 5, fallback 1 |
-| GLOBEM | `classification_tuned` | 0.20 | 0.80 | 2 | 4 | legacy: minimum 5, fallback 1 |
-| GLOBEM | `cold_safe` | 0.20 | 0.80 | 2 | 4 | strict: minimum 2, fallback 2 |
+| Dataset | Preset | EMA alpha | EMA decay | Eligibility observations | `k_min` | Verified split | Mature reassignment |
+|---|---|---:|---:|---:|---:|---:|---|
+| CES | `classification_tuned` | 0.20 | 0.80 | 20 | 5 | off | `20 / 0.01` |
+| CES | `cold_safe` | 0.05 | 0.95 | 20 | 3 | off | `20 / 0.01` |
+| GLOBEM | `classification_tuned` | 0.10 | 0.90 | 2 | 5 | off | `20 / 0.01` |
+| GLOBEM | `cold_safe` | 0.12 | 0.88 | 2 | 4 | off | `20 / 0.01` |
 
-`lambda` is the regular group-sharing eligibility threshold. Under legacy
-initial eligibility, the warmup boundary may use the dataset YAML's smaller
-minimum and fallback. Strict eligibility applies the same `lambda` to regular
-and initial admission.
+`EMA alpha` is the weight of the current route gradient. The implementation
+stores its complement as `training.route_grad_ema_decay`.
 
-Run one preset with:
+`Eligibility observations` controls regular admission to grouping. Initial
+warm-up grouping retains the dataset YAML settings of five observations with a
+one-observation fallback. `k_min` is the lower target on the number of
+agglomerative groups; it is not a minimum group size or an observation gate.
+
+The mature-reassignment entry is
+`mature_min_observations / mature_loss_margin`. Both datasets use
+`20 / 0.01`. The historical `verified_split` refinement is disabled for all
+four manuscript-aligned presets.
+
+## Commands
+
+Full-stream classification:
 
 ```bash
 python process/run_sg_share_named_preset.py \
-  --dataset globem \
-  --preset classification_tuned \
-  --data data/processed/globem.csv \
-  --output results/globem_classification_tuned \
-  --seeds 42 --device cpu
+  --dataset ces --preset classification_tuned \
+  --data data/processed/ces_historical_usernorm.csv \
+  --output results/manuscript/main_classification \
+  --seeds 42 --device cuda --torch-threads 8
 
 python process/run_sg_share_named_preset.py \
-  --dataset globem \
-  --preset cold_safe \
-  --data data/processed/globem.csv \
-  --output results/globem_cold_safe \
-  --seeds 42 --device cpu
+  --dataset globem --preset classification_tuned \
+  --data data/processed/globem_full.csv \
+  --output results/manuscript/main_classification \
+  --seeds 42 --device cuda --torch-threads 8
 ```
 
-Each run writes `preset.json`, the complete resolved `config.yaml`, and the
-input stream SHA-256 in `manifest.json`; these artifacts identify the exact
-configuration and immutable processed stream used for the run.
-
-To reproduce all named SG-Share presets and the existing online SOTA ports in
-both global and per-user scopes, use:
+First-K early monitoring:
 
 ```bash
-bash scripts/run_named_reproduction.sh data/processed results/named_reproduction
+python process/run_sg_share_named_preset.py \
+  --dataset ces --preset cold_safe \
+  --data data/processed/ces_historical_usernorm.csv \
+  --output results/manuscript/cold_start \
+  --seeds 42 --device cuda --torch-threads 8
+
+python process/run_sg_share_named_preset.py \
+  --dataset globem --preset cold_safe \
+  --data data/processed/globem_full.csv \
+  --output results/manuscript/cold_start \
+  --seeds 42 --device cuda --torch-threads 8
 ```
 
-The default seed protocol is CES `42` and GLOBEM `42,43,44`, matching the
-stored comparison artifacts. Override these independently with `CES_SEEDS` and
-`GLOBEM_SEEDS`, or set `SEEDS` to force one shared seed list.
+Every run writes:
 
-The script reads `data/processed/ces.csv` and
-`data/processed/globem.csv`; it never creates, copies, replaces, or commits
-those files. SOTA predictions use raw probability, fixed threshold `0.5`, no
-probability smoothing, and no threshold search. CES SOTA runs use the shared
-causal online standardizer from the stored comparison protocol; GLOBEM SOTA
-runs consume the already normalized stored features. The implementations retain
-the fidelity boundaries documented in
-[Online SOTA reproduction](ONLINE_SOTA_REPRODUCTION.md): OLI2DS, HBP/ODL, and
-KOIL are source-grounded ports; OBAL is an independent mechanism
-reproduction; OLIFL and OLFL are compatibility analyses rather than official
-numerical reproductions.
+- `preset.json`, containing the selected registry point;
+- `config.yaml`, containing the complete resolved configuration;
+- `manifest.json`, containing the input path and SHA-256;
+- `events.csv`, `groups.csv`, `metrics.json`, and `cold_start.csv`.
 
-## Difference from the previous GitHub interface
+The output configuration and data hash, rather than the preset name alone,
+identify a numerical run.
 
-Before these named presets, `process/run_table3_experiments.py` embedded only
-the classification-tuned points in `ECAP_POINTS`. The cold-safe points existed
-only inside dataset-specific parameter-confirmation scripts. There was no
-single command that selected either version by name, and users had to infer the
-strict-initial-eligibility difference from `SearchPoint` arguments.
+## Operational boundary
 
-The named runner does not change the SG-Share algorithm or historical target.
-It exposes the already tested points through one registry and records the exact
-resolved configuration. It intentionally uses the current GitHub `main`
-default group-adapter mode, `standalone`. The deleted experimental
-`agent/cross-entropy-warmup-backbone` branch used Q/V LoRA and default
-`user_mean` group adapters; those experimental changes are not silently folded
-into these historical presets.
+These presets use `group_adapter_mode=standalone`. After a user is assigned to
+a group, the group adapter receives the normal online adapter update; the
+temporary personal adapter is not updated in parallel. The experimental
+`user_mean` and `shadow_personal` modes are not part of the manuscript-aligned
+configuration.
 
-Participant-level processed data remain ignored by Git. This change does not
-add or modify any file under `data/processed/`.
+All prediction metrics use the configured SG-Share deployment path, including
+the dataset YAML's smoothing and online threshold behavior. This is distinct
+from the online-SOTA raw fixed-0.5 protocol.

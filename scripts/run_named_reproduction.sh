@@ -5,12 +5,12 @@ DATA_ROOT="${1:-data/processed}"
 OUTPUT_ROOT="${2:-results/named_reproduction}"
 SEEDS="${SEEDS:-}"
 CES_SEEDS="${CES_SEEDS:-${SEEDS:-42}}"
-GLOBEM_SEEDS="${GLOBEM_SEEDS:-${SEEDS:-42,43,44}}"
-DEVICE="${DEVICE:-cpu}"
-THREADS="${THREADS:-1}"
+GLOBEM_SEEDS="${GLOBEM_SEEDS:-${SEEDS:-42}}"
+DEVICE="${DEVICE:-cuda}"
+THREADS="${THREADS:-8}"
 
-CES_DATA="${DATA_ROOT}/ces.csv"
-GLOBEM_DATA="${DATA_ROOT}/globem.csv"
+CES_DATA="${DATA_ROOT}/ces_historical_usernorm.csv"
+GLOBEM_DATA="${DATA_ROOT}/globem_full.csv"
 
 for path in "${CES_DATA}" "${GLOBEM_DATA}"; do
   if [[ ! -f "${path}" ]]; then
@@ -21,16 +21,16 @@ done
 
 python process/run_online_sota_suite.py \
   --datasets ces \
-  --methods oli2ds,obal,hbp,koil,olifl,olfl \
+  --methods oli2ds,hbp,koil,olifl,olfl \
   --scopes global,per_user \
   --seeds "${CES_SEEDS}" \
   --output "${OUTPUT_ROOT}/online_sota_raw05/ces" \
   --ces-data "${CES_DATA}" \
-  --raw-fixed-05
+  --no-scaling --raw-fixed-05
 
 python process/run_online_sota_suite.py \
   --datasets globem \
-  --methods oli2ds,obal,hbp,koil,olifl,olfl \
+  --methods oli2ds,hbp,koil,olifl,olfl \
   --scopes global,per_user \
   --seeds "${GLOBEM_SEEDS}" \
   --output "${OUTPUT_ROOT}/online_sota_raw05/globem" \

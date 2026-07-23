@@ -13,8 +13,11 @@ class OfflineTable2MetricsTest(unittest.TestCase):
         predictions = np.asarray([0, 0, 1, 1])
         scores = np.asarray([0.1, 0.2, 0.8, 0.9])
         metrics = _evaluate(labels, predictions, scores)
-        self.assertAlmostEqual(metrics["precision"], 0.75)
-        self.assertAlmostEqual(metrics["recall"], 5.0 / 6.0)
+        self.assertAlmostEqual(metrics["macro_precision"], 0.75)
+        self.assertAlmostEqual(metrics["macro_recall"], 5.0 / 6.0)
+        self.assertAlmostEqual(metrics["precision_pos"], 0.5)
+        self.assertEqual(metrics["recall_pos"], 1.0)
+        self.assertAlmostEqual(metrics["f1_pos"], 2.0 / 3.0)
         self.assertAlmostEqual(metrics["macro_f1"], (0.8 + 2.0 / 3.0) / 2.0)
         self.assertEqual(metrics["auc"], 1.0)
 

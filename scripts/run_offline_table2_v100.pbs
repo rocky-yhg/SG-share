@@ -31,7 +31,7 @@ nvidia-smi --query-gpu=index,name,memory.total --format=csv
   --ces-data data/processed/ces_historical_usernorm.csv \
   --globem-data data/processed/globem_full.csv \
   --output "$OUTPUT" \
-  --methods transformer,tcn,mlp,xgboost,svm,lr \
+  --methods lstm_attention,transformer,tcn,mlp,xgboost,svm,lr,random_forest,lightgbm,decision_tree \
   --seeds 42 \
   --train-fraction 0.8 \
   --device cuda \

@@ -26,8 +26,8 @@ nvidia-smi --query-gpu=index,name,memory.total --format=csv
   --dataset globem \
   --data data/processed/globem_full.csv \
   --output "$OUTPUT" \
-  --seeds 42,43,44 \
-  --methods hbp,koil,oli2ds,olifl,ecap \
+  --seeds 42 \
+  --methods hbp,koil,olfl,oli2ds,olifl,ecap \
   --device cuda \
   --torch-threads 8 \
   --resume 2>&1 | tee "$OUTPUT/run.log"

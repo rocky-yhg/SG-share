@@ -13,6 +13,7 @@ import pandas as pd
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
@@ -22,6 +23,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,7 +35,32 @@ from sgshare.config import load_config
 from sgshare.data import load_stream
 
 
-METHODS = ("transformer", "tcn", "mlp", "xgboost", "svm", "lr")
+METHODS = (
+    "lstm_attention",
+    "transformer",
+    "tcn",
+    "mlp",
+    "xgboost",
+    "svm",
+    "lr",
+    "random_forest",
+    "lightgbm",
+    "decision_tree",
+)
+
+
+class OfflineLSTMAttention(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int = 64) -> None:
+        super().__init__()
+        self.lstm = nn.LSTM(1, hidden_dim, batch_first=True)
+        self.attention = nn.Linear(hidden_dim, 1)
+        self.head = nn.Linear(hidden_dim, 2)
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        hidden, _ = self.lstm(features.unsqueeze(-1))
+        weights = torch.softmax(self.attention(hidden).squeeze(-1), dim=1)
+        pooled = torch.sum(hidden * weights.unsqueeze(-1), dim=1)
+        return self.head(pooled)
 
 
 class OfflineMLP(nn.Module):
@@ -79,10 +106,19 @@ def _seed_everything(seed: int) -> None:
 def _evaluate(labels: np.ndarray, predictions: np.ndarray, scores: np.ndarray) -> dict[str, float]:
     return {
         "accuracy": float(accuracy_score(labels, predictions)),
-        "precision": float(precision_score(
+        "precision_pos": float(precision_score(
+            labels, predictions, zero_division=0,
+        )),
+        "recall_pos": float(recall_score(
+            labels, predictions, zero_division=0,
+        )),
+        "f1_pos": float(f1_score(
+            labels, predictions, zero_division=0,
+        )),
+        "macro_precision": float(precision_score(
             labels, predictions, average="macro", zero_division=0,
         )),
-        "recall": float(recall_score(
+        "macro_recall": float(recall_score(
             labels, predictions, average="macro", zero_division=0,
         )),
         "macro_f1": float(f1_score(
@@ -187,10 +223,41 @@ def _run_model(
         )
         model.fit(train_x, train_y)
         return model.predict_proba(test_x)[:, 1]
+    if method == "random_forest":
+        model = RandomForestClassifier(
+            n_estimators=500,
+            class_weight="balanced",
+            random_state=seed,
+            n_jobs=8,
+        )
+        model.fit(train_x, train_y)
+        return model.predict_proba(test_x)[:, 1]
+    if method == "lightgbm":
+        from lightgbm import LGBMClassifier
+
+        model = LGBMClassifier(
+            n_estimators=500,
+            learning_rate=0.05,
+            class_weight="balanced",
+            random_state=seed,
+            n_jobs=8,
+            verbosity=-1,
+        )
+        model.fit(train_x, train_y)
+        return model.predict_proba(test_x)[:, 1]
+    if method == "decision_tree":
+        model = DecisionTreeClassifier(
+            class_weight="balanced",
+            random_state=seed,
+        )
+        model.fit(train_x, train_y)
+        return model.predict_proba(test_x)[:, 1]
     if method == "mlp":
         model: nn.Module = OfflineMLP(train_x.shape[1])
     elif method == "tcn":
         model = OfflineTCN(train_x.shape[1])
+    elif method == "lstm_attention":
+        model = OfflineLSTMAttention(train_x.shape[1])
     elif method == "transformer":
         config = copy.deepcopy(load_config(dataset=dataset))
         model = OfflineTransformer(train_x.shape[1], config)
@@ -215,7 +282,10 @@ def _write_summary(rows: list[dict[str, Any]], output: Path) -> None:
     frame.to_csv(output / "offline_by_seed.csv", index=False)
     if frame.empty:
         return
-    metrics = ("accuracy", "precision", "recall", "macro_f1", "auc")
+    metrics = (
+        "accuracy", "precision_pos", "recall_pos", "f1_pos",
+        "macro_precision", "macro_recall", "macro_f1", "auc",
+    )
     grouped = frame.groupby(["dataset", "method"], sort=False, dropna=False)
     parts = [grouped.size().rename("n_seeds")]
     for metric in metrics:
@@ -312,7 +382,8 @@ def run(
         "methods": list(methods),
         "seeds": [int(seed) for seed in seeds],
         "metrics": [
-            "accuracy", "macro_precision", "macro_recall", "macro_f1",
+            "accuracy", "positive_precision", "positive_recall", "positive_f1",
+            "macro_precision", "macro_recall", "macro_f1",
             "roc_auc_from_continuous_scores",
         ],
         "deep_model_epochs": epochs,

@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
 from sgshare.config import load_config
 from sgshare.data import load_stream
 from sgshare.learner import SGShareLearner
-from sgshare.presets import apply_named_preset
+from sgshare.presets import PRESETS, apply_named_preset
 
 
 def _sha256(path: str | Path) -> str:
@@ -117,7 +117,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     parser.add_argument("--dataset", required=True, choices=("ces", "globem"))
     parser.add_argument(
-        "--preset", required=True, choices=("classification_tuned", "cold_safe"),
+        "--preset",
+        required=True,
+        choices=tuple(sorted({name for _, name in PRESETS})),
     )
     parser.add_argument("--data", required=True)
     parser.add_argument("--output", required=True)
