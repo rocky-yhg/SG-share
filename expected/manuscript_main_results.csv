@@ -1,0 +1,9 @@
+paper_commit,dataset,method,metric,value,aggregation
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,ces,ocap,recall_pos,0.7543,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,ces,ocap,accuracy,0.8203,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,ces,ocap,auc,0.8709,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,ces,ocap,f1_pos,0.7060,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,globem,ocap,recall_pos,0.8503,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,globem,ocap,accuracy,0.7179,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,globem,ocap,auc,0.7926,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,globem,ocap,f1_pos,0.7359,full_stream

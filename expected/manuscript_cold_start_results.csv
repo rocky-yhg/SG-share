@@ -1,0 +1,9 @@
+paper_commit,dataset,method,k,metric,value,aggregation
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,ces,ocap,5,f1_pos,0.2713,user_mean_first_k
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,ces,ocap,10,f1_pos,0.2632,user_mean_first_k
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,ces,ocap,5,recall_pos,0.3848,user_mean_first_k
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,ces,ocap,10,recall_pos,0.3932,user_mean_first_k
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,globem,ocap,5,f1_pos,0.4380,user_mean_first_k
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,globem,ocap,10,f1_pos,0.4697,user_mean_first_k
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,globem,ocap,5,recall_pos,0.5180,user_mean_first_k
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,globem,ocap,10,recall_pos,0.5445,user_mean_first_k

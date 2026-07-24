@@ -1,0 +1,74 @@
+\begin{table*}[t]
+\centering
+\caption{Full-stream performance on CES and GLOBEM. F1 and Recall are computed for the mental-health-risk class, Accuracy is computed over all observations, and AUC measures class discrimination. Online baselines are reported under both global and per-user configurations. Bold and underline denote the best and second-best results for each metric, respectively.}
+\label{tab:main}
+\scriptsize
+\setlength{\tabcolsep}{1.05pt}
+\renewcommand{\arraystretch}{0.92}
+\definecolor{f1row}{HTML}{F4D6D8}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}ll|*{6}{c}|*{4}{c}|*{5}{c}|*{5}{c}|c@{}}
+\toprule
+\multirow{2}{*}{Dataset} &
+\multirow{2}{*}{Metric} &
+\multicolumn{6}{c|}{\textbf{Offline ML}} &
+\multicolumn{4}{c|}{\textbf{Offline DL}} &
+\multicolumn{5}{c|}{\textbf{Online (Global)}} &
+\multicolumn{5}{c|}{\textbf{Online (Per-user)}} &
+\textbf{Ours} \\
+\cmidrule(lr){3-8}\cmidrule(lr){9-12}\cmidrule(lr){13-17}\cmidrule(lr){18-22}\cmidrule(lr){23-23}
+& & XGB & SVM & LR & RF & LGBM & DT
+& LSTM & Trans. & TCN & MLP
+& HBP & KOIL & OLFL & OLI$^2$DS & OLIFL
+& HBP & KOIL & OLFL & OLI$^2$DS & OLIFL
+& \method \\
+\midrule
+\multirow{4}{*}{CES}
+& Recall & 0.4500 & 0.3130 & 0.4960 & 0.3070 & 0.4080 & 0.4650
+& 0.5790 & 0.4890 & 0.3570 & 0.3860
+& 0.8599 & \textbf{0.9125} & 0.8784 & 0.8720 & \underline{0.8943}
+& 0.4955 & 0.4838 & 0.6329 & 0.7436 & 0.6812
+& 0.7543 \\
+& Accuracy & 0.5370 & 0.5702 & 0.5297 & 0.5677 & 0.5377 & 0.5182
+& 0.5724 & 0.5700 & 0.5825 & 0.5646
+& 0.4254 & 0.3563 & 0.3966 & 0.4168 & 0.3844
+& 0.7245 & 0.7575 & 0.7543 & 0.7358 & \underline{0.7945}
+& \textbf{0.8203} \\
+& AUC & 0.5240 & 0.5317 & 0.5247 & 0.5287 & 0.5182 & 0.5104
+& 0.5753 & 0.5450 & 0.5132 & 0.5099
+& 0.5561 & 0.5236 & 0.5416 & 0.5538 & 0.5378
+& 0.7457 & 0.7294 & 0.8408 & 0.8104 & \underline{0.8650}
+& \textbf{0.8709} \\
+\rowcolor{f1row}
+& F1 & 0.4450 & 0.3750 & 0.4650 & 0.3690 & 0.4210 & 0.4430
+& 0.4300 & 0.3870 & 0.3220 & 0.3300
+& 0.4602 & 0.4468 & 0.4534 & 0.4600 & 0.4528
+& 0.5061 & 0.5320 & 0.5947 & 0.6159 & \underline{0.6538}
+& \textbf{0.7060} \\
+\midrule
+\multirow{4}{*}{GLOBEM}
+& Recall & 0.5150 & 0.3630 & 0.5990 & 0.5030 & 0.5280 & 0.5500
+& 0.2630 & 0.6710 & 0.4410 & 0.3810
+& \underline{0.9777} & \textbf{0.9813} & 0.9753 & 0.9658 & 0.9669
+& 0.5551 & 0.5043 & 0.7619 & 0.7703 & 0.7469
+& 0.8503 \\
+& Accuracy & 0.5456 & 0.5503 & 0.5503 & 0.5398 & 0.5450 & 0.5276
+& 0.5445 & 0.5404 & 0.4927 & 0.4939
+& 0.4707 & 0.4654 & 0.4715 & 0.4744 & 0.4706
+& 0.5467 & 0.6900 & \textbf{0.7419} & 0.7357 & \underline{0.7409}
+& 0.7179 \\
+& AUC & 0.5436 & 0.5374 & 0.5535 & 0.5373 & 0.5439 & 0.5292
+& 0.5251 & 0.5494 & 0.4892 & 0.4862
+& 0.5064 & 0.5017 & 0.5070 & 0.5090 & 0.5056
+& 0.5685 & 0.6306 & \textbf{0.8301} & 0.8011 & \underline{0.8175}
+& 0.7926 \\
+\rowcolor{f1row}
+& F1 & 0.5120 & 0.4280 & 0.5520 & 0.5030 & 0.5180 & 0.5190
+& 0.3480 & 0.5750 & 0.4460 & 0.4110
+& 0.6306 & 0.6292 & 0.6304 & 0.6294 & 0.6280
+& 0.5310 & 0.6006 & \underline{0.7318} & 0.7293 & 0.7271
+& \textbf{0.7359} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

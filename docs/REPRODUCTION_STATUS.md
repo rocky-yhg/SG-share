@@ -37,8 +37,8 @@ mixing columns from one event file.
 
 ## Verification completed for the current code update
 
-- remote Python syntax compilation of the modified runners;
-- 49 remote unit tests, all passing;
+- SeetaCloud Python 3.12 syntax compilation of the modified runners;
+- 49 SeetaCloud unit tests, all passing;
 - explicit tests for the four named presets;
 - explicit tests that the full ablation uses the classification-tuned center;
 - first-K tests using recorded deployment predictions;
@@ -46,6 +46,13 @@ mixing columns from one event file.
 
 Full data experiments were not rerun as part of this documentation update.
 The numerical values above are the selected existing result artifacts.
+
+The retained SeetaCloud runtime uses
+`/root/autodl-tmp/sgshare-runtime/.venv/bin/python`. Existing full-data and
+sensitivity outputs were produced from immutable `code-*` snapshots rather
+than a single mutable working directory. The main classification and parameter
+completion runs principally use `code-91f7d5b`; commit `c81444c` packages the
+corresponding named presets and public reproduction runners.
 
 ## Remaining non-executable manuscript analyses
 

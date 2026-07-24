@@ -1,0 +1,15 @@
+paper_commit,block,dataset,variant,metric,value,aggregation
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,component,ces,without_personalization,f1_pos,0.4427,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,component,ces,without_sharing,f1_pos,0.6605,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,component,ces,without_reassignment,f1_pos,0.6501,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,component,ces,ocap,f1_pos,0.7060,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,component,globem,without_personalization,f1_pos,0.6310,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,component,globem,without_sharing,f1_pos,0.7073,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,component,globem,without_reassignment,f1_pos,0.7117,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,component,globem,ocap,f1_pos,0.7359,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,grouping,ces,random,f1_pos,0.5310,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,grouping,ces,feature,f1_pos,0.5640,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,grouping,ces,gradient,f1_pos,0.7051,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,grouping,globem,random,f1_pos,0.7049,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,grouping,globem,feature,f1_pos,0.6834,full_stream
+297f60f3b87fba18ac7ae4f48a83dd79c17abc68,grouping,globem,gradient,f1_pos,0.7359,full_stream

@@ -2,7 +2,7 @@
 
 This repository contains the executable SG-Share implementation and the
 experiment runners corresponding to the current manuscript artifact
-`main.pdf`. It covers data preparation, full-stream classification,
+[paper/OCAP.pdf](paper/OCAP.pdf). It covers data preparation, full-stream classification,
 new-user first-K evaluation, offline and online baselines, component and
 grouping-signal ablations, parameter sensitivity, and efficiency profiling.
 
@@ -12,8 +12,32 @@ by the resolved configuration and processed-stream SHA-256. Read
 [Provenance](docs/PROVENANCE.md),
 [Reproduction status](docs/REPRODUCTION_STATUS.md), and
 [SOTA fidelity](docs/SOTA_FAITHFULNESS_AUDIT.md) before interpreting results.
+The retained-versus-excluded file audit is documented in
+[Repository audit](docs/REPOSITORY_AUDIT.md).
 
 ## 1. Paper-alignment snapshot
+
+The bundled 10-page PDF, result-table sources, and result figures were exported
+from paper commit
+`297f60f3b87fba18ac7ae4f48a83dd79c17abc68`. The executable code baseline is
+`c81444cc75c728543fcdfeb39f8f6b318b01613e`, which packages the settings used by
+the SeetaCloud experiments recorded under the `code-91f7d5b` runtime snapshot.
+The paper artifact is a reporting reference; known paper/code differences are
+listed in Section 8 and must not be hidden by mixing result files.
+
+Version-matched paper assets:
+
+- [complete paper PDF](paper/OCAP.pdf);
+- [full-stream table source](paper/tables/main_results.tex);
+- [new-user first-K table source](paper/tables/cold_start_results.tex);
+- [artifact hashes](paper/MANIFEST.sha256);
+- [paper/code relationship and provenance](paper/README.md).
+
+The result figures below are the exact assets used by the selected PDF.
+
+![Component and grouping-signal ablations](paper/figures/fig_ablation_results.png)
+
+![Hyperparameter sensitivity](paper/figures/fig_hyperparameter_sensitivity.png)
 
 The current manuscript uses two selected SG-Share configurations per dataset:
 
@@ -149,9 +173,15 @@ python -m pip install -e .
 python -m unittest discover -s tests -v
 ```
 
-The reported runs use seed 42 and a V100 GPU unless a table explicitly reports
-multiple seeds. The PBS examples under `scripts/` show the cluster resource
-request and environment setup.
+The selected result artifacts use seed 42 unless a table explicitly reports
+multiple seeds. They were produced on SeetaCloud RTX instances from immutable
+runtime snapshots; short CPU-only diagnostics are identified separately in
+their logs. Do not label these results as V100 runs. The exact device and
+resolved configuration from each result directory are the source of truth.
+
+The PBS/V100 files under `scripts/` are optional launchers for another cluster
+and were not used to validate commit `c81444c`. See
+[scripts/README.md](scripts/README.md) for that boundary.
 
 Set common paths:
 
