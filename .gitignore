@@ -3,13 +3,25 @@ __pycache__/
 .pytest_cache/
 .venv/
 .DS_Store
+._*
 .tmp/
 =
+.env
+.env.*
+!.env.example
+*.log
+*.out
+*.err
+*.pem
+*.key
+/AGENTS.md
 
 # Dataset payloads are obtained from their official sources. Never publish
 # participant-level raw or processed records from this repository.
 data/raw/*
 data/processed/*
+data/processed.zip
+data/releases/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 data/audit/**/*.csv*

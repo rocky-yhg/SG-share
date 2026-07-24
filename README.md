@@ -2,7 +2,7 @@
 
 This repository contains the executable SG-Share implementation and the
 experiment runners corresponding to the current manuscript artifact
-`main.pdf`. It covers data preparation, full-stream classification,
+[paper/OCAP.pdf](paper/OCAP.pdf). It covers data preparation, full-stream classification,
 new-user first-K evaluation, offline and online baselines, component and
 grouping-signal ablations, parameter sensitivity, and efficiency profiling.
 
@@ -12,8 +12,51 @@ by the resolved configuration and processed-stream SHA-256. Read
 [Provenance](docs/PROVENANCE.md),
 [Reproduction status](docs/REPRODUCTION_STATUS.md), and
 [SOTA fidelity](docs/SOTA_FAITHFULNESS_AUDIT.md) before interpreting results.
+The retained-versus-excluded file audit is documented in
+[Repository audit](docs/REPOSITORY_AUDIT.md).
 
-## 1. Paper-alignment snapshot
+## 1. Results as presented in the paper
+
+The bundled 10-page PDF, result-table sources, and result figures were exported
+from paper commit
+`297f60f3b87fba18ac7ae4f48a83dd79c17abc68`. The executable code baseline is
+`c81444cc75c728543fcdfeb39f8f6b318b01613e`, which packages the settings used by
+the SeetaCloud experiments recorded under the `code-91f7d5b` runtime snapshot.
+The paper artifact is the reporting reference. The tables and figures below
+are copied directly from that artifact rather than reconstructed as separate
+Markdown tables. Known paper/code differences are listed in Section 8.
+
+Version-matched paper assets:
+
+- [complete paper PDF](paper/OCAP.pdf);
+- [full-stream table source](paper/tables/main_results.tex);
+- [new-user first-K table source](paper/tables/cold_start_results.tex);
+- [artifact hashes](paper/MANIFEST.sha256);
+- [paper/code relationship and provenance](paper/README.md).
+
+### Table 2: Full-stream performance
+
+![Table 2: Full-stream performance on CES and GLOBEM](paper/tables/main_results.png)
+
+### Figure 3: Streaming characteristics and evidence accumulation
+
+![Figure 3: Streaming characteristics and evidence accumulation](paper/figures/fig_streaming_characteristics.png)
+
+### Figure 4: Adaptation cost
+
+![Figure 4: Adaptation cost across stream progress](paper/figures/fig_efficiency.png)
+
+### Table 3: Low-evidence performance
+
+![Table 3: Low-evidence performance on CES and GLOBEM](paper/tables/cold_start_results.png)
+
+### Figure 5: Component and grouping-signal ablations
+
+![Figure 5: Component and grouping-signal ablations](paper/figures/fig_ablation_results.png)
+
+### Figure 6: Hyperparameter sensitivity
+
+![Figure 6: Hyperparameter sensitivity](paper/figures/fig_hyperparameter_sensitivity.png)
 
 The current manuscript uses two selected SG-Share configurations per dataset:
 
@@ -149,9 +192,15 @@ python -m pip install -e .
 python -m unittest discover -s tests -v
 ```
 
-The reported runs use seed 42 and a V100 GPU unless a table explicitly reports
-multiple seeds. The PBS examples under `scripts/` show the cluster resource
-request and environment setup.
+The selected result artifacts use seed 42 unless a table explicitly reports
+multiple seeds. They were produced on SeetaCloud RTX instances from immutable
+runtime snapshots; short CPU-only diagnostics are identified separately in
+their logs. Do not label these results as V100 runs. The exact device and
+resolved configuration from each result directory are the source of truth.
+
+The PBS/V100 files under `scripts/` are optional launchers for another cluster
+and were not used to validate commit `c81444c`. See
+[scripts/README.md](scripts/README.md) for that boundary.
 
 Set common paths:
 
@@ -180,17 +229,11 @@ python process/run_sg_share_named_preset.py \
   --seeds 42 --device cuda --torch-threads 8
 ```
 
-The current selected results used by the manuscript are:
-
-| Dataset | F1(+) | Recall(+) | Accuracy | AUC |
-|---|---:|---:|---:|---:|
-| CES | 0.7060 | 0.7580 | 0.8202 | 0.8743 |
-| GLOBEM | 0.7359 | 0.8503 | 0.7179 | 0.7926 |
-
-The compiled PDF rounds CES Accuracy/AUC to `0.8203/0.8709` from an earlier
-stored deployment output, while the fresh selected-parameter rerun is
-`0.8202/0.8743`. Do not combine metrics from the two event files. A regenerated
-table must take all four metrics from one run directory.
+The manuscript-facing result is Table 2 in Section 1. Its rendered image,
+[LaTeX source](paper/tables/main_results.tex), and
+[versioned CSV transcription](expected/manuscript_main_results.csv) preserve
+the paper display exactly. Fresh rerun values belong in a separate result
+directory and must not replace this paper snapshot.
 
 ### 5.2 New-user first-K evaluation
 
@@ -209,16 +252,13 @@ python process/run_sg_share_named_preset.py \
   --seeds 42 --device cuda --torch-threads 8
 ```
 
-Current paper values:
-
-| Dataset | F1@5 | F1@10 | Recall@5 | Recall@10 |
-|---|---:|---:|---:|---:|
-| CES | 0.2713 | 0.2632 | 0.3848 | 0.3932 |
-| GLOBEM | 0.4380 | 0.4697 | 0.5180 | 0.5445 |
-
-Each value is computed per eligible user over that user's first K prequential
-predictions and then averaged across users. These are positive-class F1 and
-Recall, not class-macro metrics and not pooled event metrics.
+The manuscript-facing result is Table 3 in Section 1. Its rendered image,
+[LaTeX source](paper/tables/cold_start_results.tex), and
+[versioned CSV transcription](expected/manuscript_cold_start_results.csv)
+preserve the paper display exactly. Each value is computed per eligible user
+over that user's first K prequential predictions and then averaged across
+users. These are positive-class F1 and Recall, not class-macro metrics and not
+pooled event metrics.
 
 [process/run_table3_experiments.py](process/run_table3_experiments.py) runs the
 same first-K protocol jointly for HBP/ODL, KOIL, OLFL, OLI2DS, OLIFL, and
@@ -328,6 +368,11 @@ done
 
 Do not label the class-macro columns as F1(+) or Recall(+).
 
+The paper-facing result is Figure 5 in Section 1. Its exact display asset is
+[fig_ablation_results.png](paper/figures/fig_ablation_results.png), with the
+reported values transcribed in
+[manuscript_ablation_results.csv](expected/manuscript_ablation_results.csv).
+
 ### 5.6 Route-gradient EMA alpha and minimum group count
 
 Runner:
@@ -351,12 +396,7 @@ python process/run_sg_share_parameter_search.py \
   --search-strategy one_factor --seed 42 --torch-threads 8
 ```
 
-Current F1(+) values:
-
-| Dataset | Alpha sweep (`k_min=5`) | `k_min` sweep (selected alpha) |
-|---|---|---|
-| CES | 0.05: 0.6908; 0.10: 0.6992; 0.20: **0.7060** | 3: 0.7039; 4: 0.7045; 5: **0.7060** |
-| GLOBEM | 0.05: 0.7306; 0.10: **0.7359**; 0.20: 0.7306 | 3: 0.7322; 4: 0.7269; 5: **0.7359** |
+The alpha and `k_min` panels are displayed exactly as Figure 6 in Section 1.
 
 ### 5.7 Mature reassignment sensitivity
 
@@ -381,16 +421,7 @@ python process/run_reassignment_sensitivity.py \
   --seed 42 --device cuda --torch-threads 8
 ```
 
-Current F1(+) results:
-
-| Sweep | CES | GLOBEM |
-|---|---|---|
-| Lambda at delta 0.01 | 10: .7037; **20: .7060**; 40: .7038; 80: .7026 | 5: .7349; 10: .7348; 15: .7345; **20: .7359** |
-| Delta | 0: .6999; .001: .7033; .005: .7007; **.01: .7060**; .02: .7031 | at lambda 10: 0: .7272; .001: .7304; .005: .7349; .01: .7348; **.02: .7359** |
-
-The selected GLOBEM point remains lambda 20 / delta 0.01. The equal F1 reached
-at lambda 10 / delta 0.02 produced no actual reassignment and is not the
-selected configuration.
+The mature-reassignment panels are displayed exactly as Figure 6 in Section 1.
 
 ### 5.8 Efficiency
 
@@ -400,6 +431,8 @@ Runner:
 This benchmark must run on a V100. At each 10% checkpoint it compares online
 processing of the newly arrived interval with training a fresh offline
 Transformer on the complete prefix.
+
+The paper-facing result is Figure 4 in Section 1.
 
 ```bash
 python process/run_efficiency_comparison.py \

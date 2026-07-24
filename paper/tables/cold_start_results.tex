@@ -1,0 +1,40 @@
+\begin{table}[t]
+\centering
+\caption{Low-evidence performance on CES and GLOBEM. Each metric is computed from every eligible user's first $K$ predictions and then averaged across users. Bold and underline denote the best and second-best results, respectively.}
+\label{tab:cold-start}
+\scriptsize
+\setlength{\tabcolsep}{1.2pt}
+\renewcommand{\arraystretch}{0.94}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}l|cccc|cccc@{}}
+\toprule
+\multirow{2}{*}{Method} &
+\multicolumn{4}{c|}{CES} &
+\multicolumn{4}{c}{GLOBEM} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+& F1@5 & F1@10 & R@5 & R@10
+& F1@5 & F1@10 & R@5 & R@10 \\
+\midrule
+HBP/ODL
+& 0.1300 & 0.1409 & 0.1882 & 0.2178
+& 0.2772 & 0.3129 & 0.3512 & 0.4009 \\
+KOIL
+& 0.2060 & 0.1861 & 0.2277 & 0.2016
+& 0.3490 & 0.3031 & 0.3622 & 0.2932 \\
+OLFL
+& 0.2162 & 0.2100 & 0.2773 & 0.2811
+& 0.3829 & 0.4252 & 0.4280 & 0.4538 \\
+OLI$^2$DS
+& 0.2322 & \underline{0.2427} & 0.2888 & \underline{0.3015}
+& \underline{0.4060} & \underline{0.4585} & \underline{0.4334} & \underline{0.4769} \\
+OLIFL
+& \underline{0.2328} & 0.2267 & \underline{0.2930} & 0.2951
+& 0.3911 & 0.4222 & 0.4241 & 0.4427 \\
+\midrule
+\textbf{\method}
+& \textbf{0.2713} & \textbf{0.2632} & \textbf{0.3848} & \textbf{0.3932}
+& \textbf{0.4380} & \textbf{0.4697} & \textbf{0.5180} & \textbf{0.5445} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
