@@ -15,16 +15,17 @@ by the resolved configuration and processed-stream SHA-256. Read
 The retained-versus-excluded file audit is documented in
 [Repository audit](docs/REPOSITORY_AUDIT.md).
 
-## 1. Results as presented in the paper
+## 1. Paper and code relationship
 
 The bundled 10-page PDF, result-table sources, and result figures were exported
 from paper commit
 `297f60f3b87fba18ac7ae4f48a83dd79c17abc68`. The executable code baseline is
 `c81444cc75c728543fcdfeb39f8f6b318b01613e`, which packages the settings used by
 the SeetaCloud experiments recorded under the `code-91f7d5b` runtime snapshot.
-The paper artifact is the reporting reference. The tables and figures below
-are copied directly from that artifact rather than reconstructed as separate
-Markdown tables. Known paper/code differences are listed in Section 8.
+The paper artifact is the reporting reference. Each reported table or figure
+is placed beside the corresponding experiment in Section 5. Tables are
+transcribed into a GitHub-readable layout, while figures use the exact paper
+assets. Known paper/code differences are listed in Section 8.
 
 Version-matched paper assets:
 
@@ -33,30 +34,6 @@ Version-matched paper assets:
 - [new-user first-K table source](paper/tables/cold_start_results.tex);
 - [artifact hashes](paper/MANIFEST.sha256);
 - [paper/code relationship and provenance](paper/README.md).
-
-### Table 2: Full-stream performance
-
-![Table 2: Full-stream performance on CES and GLOBEM](paper/tables/main_results.png)
-
-### Figure 3: Streaming characteristics and evidence accumulation
-
-![Figure 3: Streaming characteristics and evidence accumulation](paper/figures/fig_streaming_characteristics.png)
-
-### Figure 4: Adaptation cost
-
-![Figure 4: Adaptation cost across stream progress](paper/figures/fig_efficiency.png)
-
-### Table 3: Low-evidence performance
-
-![Table 3: Low-evidence performance on CES and GLOBEM](paper/tables/cold_start_results.png)
-
-### Figure 5: Component and grouping-signal ablations
-
-![Figure 5: Component and grouping-signal ablations](paper/figures/fig_ablation_results.png)
-
-### Figure 6: Hyperparameter sensitivity
-
-![Figure 6: Hyperparameter sensitivity](paper/figures/fig_hyperparameter_sensitivity.png)
 
 The current manuscript uses two selected SG-Share configurations per dataset:
 
@@ -144,6 +121,14 @@ the results below.
 
 Participant-level processed data are not distributed through Git.
 
+![Figure 3: Streaming characteristics and evidence accumulation](paper/figures/fig_streaming_characteristics.png)
+
+CES expands and later contracts, while GLOBEM contains different participants
+across years. In both datasets, users enter and leave the stream
+asynchronously. Accumulating more user-specific evidence takes substantially
+longer and fewer users reach larger K values, motivating continual adaptation
+and collaborative support before sufficient personal evidence is available.
+
 ### CES
 
 - Official source: College Experience Dataset, Kaggle release v5.
@@ -229,8 +214,73 @@ python process/run_sg_share_named_preset.py \
   --seeds 42 --device cuda --torch-threads 8
 ```
 
-The manuscript-facing result is Table 2 in Section 1. Its rendered image,
-[LaTeX source](paper/tables/main_results.tex), and
+Table 2 compares offline ML, offline DL, global online, per-user online, and
+OCAP. F1 and Recall use the mental-health-risk class, Accuracy uses all
+observations, and AUC measures discrimination. **Bold** and <u>underline</u>
+mark the best and second-best values for each dataset and metric.
+
+#### CES
+
+| Setting | Method | Recall | Accuracy | AUC | F1 |
+|---|---|---:|---:|---:|---:|
+| Offline ML | XGB | 0.4500 | 0.5370 | 0.5240 | 0.4450 |
+| Offline ML | SVM | 0.3130 | 0.5702 | 0.5317 | 0.3750 |
+| Offline ML | LR | 0.4960 | 0.5297 | 0.5247 | 0.4650 |
+| Offline ML | RF | 0.3070 | 0.5677 | 0.5287 | 0.3690 |
+| Offline ML | LGBM | 0.4080 | 0.5377 | 0.5182 | 0.4210 |
+| Offline ML | DT | 0.4650 | 0.5182 | 0.5104 | 0.4430 |
+| Offline DL | LSTM | 0.5790 | 0.5724 | 0.5753 | 0.4300 |
+| Offline DL | Transformer | 0.4890 | 0.5700 | 0.5450 | 0.3870 |
+| Offline DL | TCN | 0.3570 | 0.5825 | 0.5132 | 0.3220 |
+| Offline DL | MLP | 0.3860 | 0.5646 | 0.5099 | 0.3300 |
+| Online (Global) | HBP/ODL | 0.8599 | 0.4254 | 0.5561 | 0.4602 |
+| Online (Global) | KOIL | **0.9125** | 0.3563 | 0.5236 | 0.4468 |
+| Online (Global) | OLFL | 0.8784 | 0.3966 | 0.5416 | 0.4534 |
+| Online (Global) | OLI²DS | 0.8720 | 0.4168 | 0.5538 | 0.4600 |
+| Online (Global) | OLIFL | <u>0.8943</u> | 0.3844 | 0.5378 | 0.4528 |
+| Online (Per-user) | HBP/ODL | 0.4955 | 0.7245 | 0.7457 | 0.5061 |
+| Online (Per-user) | KOIL | 0.4838 | 0.7575 | 0.7294 | 0.5320 |
+| Online (Per-user) | OLFL | 0.6329 | 0.7543 | 0.8408 | 0.5947 |
+| Online (Per-user) | OLI²DS | 0.7436 | 0.7358 | 0.8104 | 0.6159 |
+| Online (Per-user) | OLIFL | 0.6812 | <u>0.7945</u> | <u>0.8650</u> | <u>0.6538</u> |
+| Ours | **OCAP** | 0.7543 | **0.8203** | **0.8709** | **0.7060** |
+
+#### GLOBEM
+
+| Setting | Method | Recall | Accuracy | AUC | F1 |
+|---|---|---:|---:|---:|---:|
+| Offline ML | XGB | 0.5150 | 0.5456 | 0.5436 | 0.5120 |
+| Offline ML | SVM | 0.3630 | 0.5503 | 0.5374 | 0.4280 |
+| Offline ML | LR | 0.5990 | 0.5503 | 0.5535 | 0.5520 |
+| Offline ML | RF | 0.5030 | 0.5398 | 0.5373 | 0.5030 |
+| Offline ML | LGBM | 0.5280 | 0.5450 | 0.5439 | 0.5180 |
+| Offline ML | DT | 0.5500 | 0.5276 | 0.5292 | 0.5190 |
+| Offline DL | LSTM | 0.2630 | 0.5445 | 0.5251 | 0.3480 |
+| Offline DL | Transformer | 0.6710 | 0.5404 | 0.5494 | 0.5750 |
+| Offline DL | TCN | 0.4410 | 0.4927 | 0.4892 | 0.4460 |
+| Offline DL | MLP | 0.3810 | 0.4939 | 0.4862 | 0.4110 |
+| Online (Global) | HBP/ODL | <u>0.9777</u> | 0.4707 | 0.5064 | 0.6306 |
+| Online (Global) | KOIL | **0.9813** | 0.4654 | 0.5017 | 0.6292 |
+| Online (Global) | OLFL | 0.9753 | 0.4715 | 0.5070 | 0.6304 |
+| Online (Global) | OLI²DS | 0.9658 | 0.4744 | 0.5090 | 0.6294 |
+| Online (Global) | OLIFL | 0.9669 | 0.4706 | 0.5056 | 0.6280 |
+| Online (Per-user) | HBP/ODL | 0.5551 | 0.5467 | 0.5685 | 0.5310 |
+| Online (Per-user) | KOIL | 0.5043 | 0.6900 | 0.6306 | 0.6006 |
+| Online (Per-user) | OLFL | 0.7619 | **0.7419** | **0.8301** | <u>0.7318</u> |
+| Online (Per-user) | OLI²DS | 0.7703 | 0.7357 | 0.8011 | 0.7293 |
+| Online (Per-user) | OLIFL | 0.7469 | <u>0.7409</u> | <u>0.8175</u> | 0.7271 |
+| Ours | **OCAP** | 0.8503 | 0.7179 | 0.7926 | **0.7359** |
+
+Online methods consistently outperform offline models. Per-user online models
+usually improve over their global counterparts, showing the need to represent
+heterogeneous behavior-state relationships. OCAP achieves the best F1 on both
+datasets; on CES it also obtains the best Accuracy and AUC, while on GLOBEM its
+other metrics remain comparable to the strongest per-user baselines. The
+global methods' high Recall should be interpreted with their low Accuracy and
+F1, because broad positive predictions also produce many false positives.
+
+The manuscript-facing result is transcribed above. Its
+[LaTeX source](paper/tables/main_results.tex) and
 [versioned CSV transcription](expected/manuscript_main_results.csv) preserve
 the paper display exactly. Fresh rerun values belong in a separate result
 directory and must not replace this paper snapshot.
@@ -252,8 +302,28 @@ python process/run_sg_share_named_preset.py \
   --seeds 42 --device cuda --torch-threads 8
 ```
 
-The manuscript-facing result is Table 3 in Section 1. Its rendered image,
-[LaTeX source](paper/tables/cold_start_results.tex), and
+Table 3 evaluates every eligible user's first K predictions and then averages
+the user-level mental-health-risk F1 and Recall. **Bold** and
+<u>underline</u> mark the best and second-best values.
+
+| Method | CES F1@5 | CES F1@10 | CES R@5 | CES R@10 | GLOBEM F1@5 | GLOBEM F1@10 | GLOBEM R@5 | GLOBEM R@10 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| HBP/ODL | 0.1300 | 0.1409 | 0.1882 | 0.2178 | 0.2772 | 0.3129 | 0.3512 | 0.4009 |
+| KOIL | 0.2060 | 0.1861 | 0.2277 | 0.2016 | 0.3490 | 0.3031 | 0.3622 | 0.2932 |
+| OLFL | 0.2162 | 0.2100 | 0.2773 | 0.2811 | 0.3829 | 0.4252 | 0.4280 | 0.4538 |
+| OLI²DS | 0.2322 | <u>0.2427</u> | 0.2888 | <u>0.3015</u> | <u>0.4060</u> | <u>0.4585</u> | <u>0.4334</u> | <u>0.4769</u> |
+| OLIFL | <u>0.2328</u> | 0.2267 | <u>0.2930</u> | 0.2951 | 0.3911 | 0.4222 | 0.4241 | 0.4427 |
+| **OCAP** | **0.2713** | **0.2632** | **0.3848** | **0.3932** | **0.4380** | **0.4697** | **0.5180** | **0.5445** |
+
+OCAP outperforms every baseline in all reported low-evidence cases. Its margin
+over the strongest baseline is consistently larger at K=5 than at K=10,
+indicating that collaborative grouping is most valuable when isolated personal
+adapters have very little evidence. Gradient-based grouping broadens the
+evidence base, while reassignment limits interference from outdated sharing
+relationships.
+
+The manuscript-facing result is transcribed above. Its
+[LaTeX source](paper/tables/cold_start_results.tex) and
 [versioned CSV transcription](expected/manuscript_cold_start_results.csv)
 preserve the paper display exactly. Each value is computed per eligible user
 over that user's first K prequential predictions and then averaged across
@@ -368,9 +438,17 @@ done
 
 Do not label the class-macro columns as F1(+) or Recall(+).
 
-The paper-facing result is Figure 5 in Section 1. Its exact display asset is
-[fig_ablation_results.png](paper/figures/fig_ablation_results.png), with the
-reported values transcribed in
+![Figure 5: Component and grouping-signal ablations](paper/figures/fig_ablation_results.png)
+
+Removing personalization causes the largest degradation, especially on CES.
+Removing group sharing also lowers F1 because each user must learn from limited
+personal data alone, and disabling reassignment makes fixed groups less
+suitable as user update directions evolve. Random and feature-based grouping
+are inconsistent across datasets; gradient-based grouping achieves the highest
+F1 on both because update directions directly describe how each user's adapter
+needs to learn.
+
+The reported values are transcribed in
 [manuscript_ablation_results.csv](expected/manuscript_ablation_results.csv).
 
 ### 5.6 Route-gradient EMA alpha and minimum group count
@@ -396,7 +474,8 @@ python process/run_sg_share_parameter_search.py \
   --search-strategy one_factor --seed 42 --torch-threads 8
 ```
 
-The alpha and `k_min` panels are displayed exactly as Figure 6 in Section 1.
+These runs produce the alpha and `k_min` panels in the complete sensitivity
+figure shown after Section 5.7.
 
 ### 5.7 Mature reassignment sensitivity
 
@@ -421,7 +500,15 @@ python process/run_reassignment_sensitivity.py \
   --seed 42 --device cuda --torch-threads 8
 ```
 
-The mature-reassignment panels are displayed exactly as Figure 6 in Section 1.
+![Figure 6: Hyperparameter sensitivity](paper/figures/fig_hyperparameter_sensitivity.png)
+
+Alpha and the movement margin are the more sensitive hyperparameters, the
+mature-evidence threshold is stable on both datasets, and sensitivity to the
+number of groups depends on the dataset. CES benefits from greater weight on
+recent update directions, while GLOBEM peaks at an intermediate alpha because
+its sparser histories require stronger smoothing. A very small movement margin
+can accept unstable reassignments, while an overly large margin can block useful
+changes.
 
 ### 5.8 Efficiency
 
@@ -432,8 +519,6 @@ This benchmark must run on a V100. At each 10% checkpoint it compares online
 processing of the newly arrived interval with training a fresh offline
 Transformer on the complete prefix.
 
-The paper-facing result is Figure 4 in Section 1.
-
 ```bash
 python process/run_efficiency_comparison.py \
   --datasets ces,globem \
@@ -442,6 +527,13 @@ python process/run_efficiency_comparison.py \
   --offline-hidden-dim 256 --offline-depth 1 --offline-heads 4 \
   --offline-learning-rate 0.01 --torch-threads 8
 ```
+
+![Figure 4: Adaptation cost across stream progress](paper/figures/fig_efficiency.png)
+
+Offline retraining repeatedly processes the full accumulated prefix, whereas
+OCAP processes only each newly arrived 10% interval. At 90% stream progress,
+offline retraining requires 100.6% more time on CES and 470.2% more time on
+GLOBEM than online adaptation.
 
 ## 6. Metric definitions
 

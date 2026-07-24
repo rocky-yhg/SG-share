@@ -19,18 +19,17 @@ values and visual forms are consequently version-consistent.
 
 - [`OCAP.pdf`](OCAP.pdf): complete 10-page paper artifact.
 - `tables/main_results.tex`: full-stream result table.
-- `tables/main_results.png`: Table 2 rendered directly from the bundled PDF.
 - `tables/cold_start_results.tex`: low-evidence result table.
-- `tables/cold_start_results.png`: Table 3 rendered directly from the bundled PDF.
 - `tables/evidence_accumulation.tex`: evidence-accumulation figure wrapper.
 - `tables/ablation_results.tex`: component/grouping ablation figure wrapper.
 - `tables/hyperparameter_sensitivity.tex`: sensitivity figure wrapper.
 - `figures/`: exact PDF and PNG figure assets referenced by the result section.
 - `MANIFEST.sha256`: integrity hashes for every bundled artifact.
 
-The root README uses these rendered table snapshots and the exact figure PNGs
-for the paper-facing result display. Numerical reruns are reported separately
-and do not overwrite these version-matched manuscript assets.
+The root README places GitHub-readable transcriptions of the result tables and
+the exact figure PNGs beside their corresponding experiment commands.
+Numerical reruns are reported separately and do not overwrite these
+version-matched manuscript assets.
 
 ## Relationship to the executable code
 
