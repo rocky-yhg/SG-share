@@ -1,0 +1,13 @@
+analysis,dataset,point,k,active_users,median_days,q1_days,q3_days,provenance
+participation,ces,first,,33,,,,retained_figure_data
+participation,ces,peak,,202,,,,retained_figure_data
+participation,ces,final,,50,,,,retained_figure_data
+participation,globem,first,,153,,,,retained_figure_data
+participation,globem,peak,,217,,,,retained_figure_data
+participation,globem,final,,194,,,,retained_figure_data
+evidence_accumulation,ces,first_k,5,217,19.0,12.0,24.0,retained_figure_data
+evidence_accumulation,ces,first_k,10,215,47.0,33.5,57.0,retained_figure_data
+evidence_accumulation,ces,first_k,20,210,106.0,75.0,124.0,retained_figure_data
+evidence_accumulation,ces,first_k,50,191,279.0,217.5,317.0,retained_figure_data
+evidence_accumulation,globem,first_k,5,694,28.0,28.0,28.0,retained_figure_data
+evidence_accumulation,globem,first_k,10,618,63.0,60.25,63.0,retained_figure_data

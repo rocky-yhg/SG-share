@@ -1,0 +1,14 @@
+panel,dataset,series,point,n_events,n_users,f1_pos,aggregation,provenance
+a,ces,frozen_lstm_attention,W4,5446,187,0.434972,event_pooled,retained_publication_aggregate
+a,ces,frozen_lstm_attention,W5,5471,178,0.327427,event_pooled,retained_publication_aggregate
+a,ces,frozen_lstm_attention,W6,4667,170,0.343817,event_pooled,retained_publication_aggregate
+a,ces,frozen_lstm_attention,W7,2707,142,0.302251,event_pooled,retained_publication_aggregate
+a,ces,frozen_lstm_attention,W8,1567,70,0.265649,event_pooled,retained_publication_aggregate
+b,ces,olifl_global,first_10,2150,215,0.2717,user_macro,remote_reproduction
+b,ces,olifl_per_user,first_10,2150,215,0.2267,user_macro,remote_reproduction
+b,ces,olifl_global,first_20,4200,210,0.2738,user_macro,remote_reproduction
+b,ces,olifl_per_user,first_20,4200,210,0.2166,user_macro,remote_reproduction
+b,ces,olifl_global,first_50,9550,191,0.2917,user_macro,remote_reproduction
+b,ces,olifl_per_user,first_50,9550,191,0.2572,user_macro,remote_reproduction
+b,ces,olifl_global,full,35289,218,0.4528,event_pooled,remote_reproduction
+b,ces,olifl_per_user,full,35289,218,0.6538,event_pooled,remote_reproduction

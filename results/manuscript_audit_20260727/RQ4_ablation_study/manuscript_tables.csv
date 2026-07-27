@@ -1,0 +1,15 @@
+table,dataset,variant,full_metric,full_value,early_metric,early_value,result_family
+component,ces,w/o_personalization,class_macro_f1,0.2485,class_macro_f1_at_5,0.1609,current_paper_macro
+component,ces,w/o_grouping,class_macro_f1,0.7423,class_macro_f1_at_5,0.2560,current_paper_macro
+component,ces,w/o_reassignment,class_macro_f1,0.7820,class_macro_f1_at_5,0.3066,current_paper_macro
+component,ces,sg_share,class_macro_f1,0.7878,class_macro_f1_at_5,0.3020,current_paper_macro
+component,globem,w/o_personalization,class_macro_f1,0.3266,class_macro_f1_at_5,0.2586,current_paper_macro
+component,globem,w/o_grouping,class_macro_f1,0.6618,class_macro_f1_at_5,0.3197,current_paper_macro
+component,globem,w/o_reassignment,class_macro_f1,0.7169,class_macro_f1_at_5,0.3784,current_paper_macro
+component,globem,sg_share,class_macro_f1,0.7194,class_macro_f1_at_5,0.3786,current_paper_macro
+grouping,ces,random,class_macro_f1,0.3639,class_macro_f1_at_5,0.1960,current_paper_macro
+grouping,ces,feature_based,class_macro_f1,0.3923,class_macro_f1_at_5,0.2131,current_paper_macro
+grouping,ces,gradient_based,class_macro_f1,0.7820,class_macro_f1_at_5,0.3066,current_paper_macro
+grouping,globem,random,class_macro_f1,0.4494,class_macro_f1_at_5,0.2969,current_paper_macro
+grouping,globem,feature_based,class_macro_f1,0.5424,class_macro_f1_at_5,0.3019,current_paper_macro
+grouping,globem,gradient_based,class_macro_f1,0.7169,class_macro_f1_at_5,0.3784,current_paper_macro

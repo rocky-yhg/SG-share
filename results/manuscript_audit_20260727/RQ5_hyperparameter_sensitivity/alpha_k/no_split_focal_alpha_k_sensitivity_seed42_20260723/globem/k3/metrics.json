@@ -1,0 +1,70 @@
+{
+  "cold_start": [
+    {
+      "k": 5.0,
+      "n_events": 3470.0,
+      "n_users": 694.0,
+      "pooled_balanced_accuracy": 0.6580421590245189,
+      "pooled_f1": 0.6713762428048142,
+      "pooled_recall": 0.8342002600780234,
+      "pooled_specificity": 0.48188405797101447,
+      "user_macro_balanced_accuracy": 0.40174111431316045,
+      "user_macro_f1": 0.42232971959196736,
+      "user_macro_recall": 0.499375600384246,
+      "user_macro_specificity": 0.3041066282420749
+    },
+    {
+      "k": 10.0,
+      "n_events": 6320.0,
+      "n_users": 632.0,
+      "pooled_balanced_accuracy": 0.7179061986677551,
+      "pooled_f1": 0.7243291860290811,
+      "pooled_recall": 0.8302405498281787,
+      "pooled_specificity": 0.6055718475073314,
+      "user_macro_balanced_accuracy": 0.4513797845087402,
+      "user_macro_f1": 0.4570799713218249,
+      "user_macro_recall": 0.519527953586498,
+      "user_macro_specificity": 0.38323161543098255
+    }
+  ],
+  "dataset": "globem",
+  "feature_count": 130,
+  "group_adapter_mode": "standalone",
+  "mean_first_k_f1": 0.43970484545689614,
+  "mean_groups": 3.1176470588235294,
+  "method": "full_final",
+  "n_events": 8225,
+  "n_groups_final": 3,
+  "n_users": 704,
+  "overall": {
+    "accuracy": 0.7189057750759879,
+    "balanced_accuracy": 0.7270276143186836,
+    "f1": 0.7328403050612434,
+    "fn": 630.0,
+    "fp": 1682.0,
+    "n": 8225.0,
+    "precision": 0.6534102616937977,
+    "recall": 0.8342541436464088,
+    "specificity": 0.6198010849909584,
+    "tn": 2742.0,
+    "tp": 3171.0
+  },
+  "personal_adapter_updates": 1324,
+  "post_warmup": {
+    "accuracy": 0.7239975323874152,
+    "balanced_accuracy": 0.7313790691848664,
+    "f1": 0.7364825067734716,
+    "fn": 630.0,
+    "fp": 1607.0,
+    "n": 8105.0,
+    "precision": 0.6604690471159941,
+    "recall": 0.8322683706070287,
+    "specificity": 0.630489767762704,
+    "tn": 2742.0,
+    "tp": 3126.0
+  },
+  "seed": 42,
+  "shadow_group_refreshes": 0,
+  "shadow_updates": 0,
+  "target_variant": "p0_bias_best_cflsplit_a_m005_u10_e50"
+}

@@ -1,0 +1,21 @@
+{
+  "accuracy": 0.7169604863221885,
+  "auc": 0.791525280298846,
+  "dataset": "globem",
+  "delta_move": 0.01,
+  "evaluated_users_total": 590,
+  "f1_pos": 0.7344890510948905,
+  "final_group_count": 5,
+  "label": "lambda15_d010",
+  "lambda_m": 15,
+  "macro_f1": 0.715721484672673,
+  "macro_recall": 0.7261269935626533,
+  "mature_every": 10,
+  "mature_min_buffer": 5,
+  "mean_churn": 0.15818128751902125,
+  "move_rate": 0.12203389830508475,
+  "moves_total": 72,
+  "n_events": 8225,
+  "recall_pos": 0.8471454880294659,
+  "seed": 42
+}

@@ -1,0 +1,9 @@
+algorithm_base_commit=6af9c4f90c858abeaebadc08c0eec4e856acd5d1
+runner_commit=91f7d5b30ca39cad3440d468d116634480eb8f42
+seed=42
+device=NVIDIA GeForce RTX 5090 / CUDA
+prediction=configured deployment prediction (events.prediction)
+cold_metric=user-macro class-macro F1 over each users first 5 events
+full_metric=class-macro F1 over the complete stream
+ces_data_sha256=771a8973ac58e1b50a071e0e55ed681a022b7f283cc7f19c631e365720745eb5
+globem_data_sha256=d7ead91d72b647d3e881ae43c8bd0837906935720969081a59c1c6c996caeacc
