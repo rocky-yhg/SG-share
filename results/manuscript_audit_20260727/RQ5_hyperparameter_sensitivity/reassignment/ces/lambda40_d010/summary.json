@@ -1,0 +1,21 @@
+{
+  "accuracy": 0.8171384850803366,
+  "auc": 0.8735439845156068,
+  "dataset": "ces",
+  "delta_move": 0.01,
+  "evaluated_users_total": 4984,
+  "f1_pos": 0.7038413878562577,
+  "final_group_count": 5,
+  "label": "lambda40_d010",
+  "lambda_m": 40,
+  "macro_f1": 0.7857889839115267,
+  "macro_recall": 0.8007795488475984,
+  "mature_every": 10,
+  "mature_min_buffer": 5,
+  "mean_churn": 0.19684899010122783,
+  "move_rate": 0.5391252006420546,
+  "moves_total": 2687,
+  "n_events": 35289,
+  "recall_pos": 0.7627573858549687,
+  "seed": 42
+}

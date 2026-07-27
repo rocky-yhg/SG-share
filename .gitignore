@@ -34,6 +34,8 @@ vendor/
 # Generated predictions, checkpoints, and experiment reports are local output.
 results/*
 !results/.gitkeep
+!results/manuscript_audit_20260727/
+!results/manuscript_audit_20260727/**
 *.ckpt
 *.pt
 *.pth

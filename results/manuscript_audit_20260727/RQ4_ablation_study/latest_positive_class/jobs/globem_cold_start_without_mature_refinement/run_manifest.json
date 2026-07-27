@@ -1,0 +1,14 @@
+{
+  "datasets": [
+    "globem"
+  ],
+  "purposes": [
+    "cold_start"
+  ],
+  "variants": [
+    "without_mature_refinement"
+  ],
+  "seed": 42,
+  "device": "NVIDIA GeForce RTX 4090",
+  "code_root": "/root/autodl-tmp/sgshare-runtime/code-91f7d5b"
+}

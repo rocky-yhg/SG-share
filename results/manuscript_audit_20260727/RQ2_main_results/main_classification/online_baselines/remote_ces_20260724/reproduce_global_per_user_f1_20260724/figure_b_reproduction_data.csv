@@ -1,0 +1,9 @@
+series,checkpoint,median_days,f1_pos,metric_basis,n_users
+Per-user OLIFL,10,47.0,0.2266993442474038,first-K user-macro F1(+),215
+Per-user OLIFL,20,106.0,0.2166077365085494,first-K user-macro F1(+),210
+Per-user OLIFL,50,279.0,0.2571795640825598,first-K user-macro F1(+),191
+Per-user OLIFL,Full,,0.653778223304215,full-stream pooled F1(+),218
+Global OLIFL reference,10,47.0,0.4528396927339126,full-stream pooled F1(+) repeated as reference,218
+Global OLIFL reference,20,106.0,0.4528396927339126,full-stream pooled F1(+) repeated as reference,218
+Global OLIFL reference,50,279.0,0.4528396927339126,full-stream pooled F1(+) repeated as reference,218
+Global OLIFL reference,Full,,0.4528396927339126,full-stream pooled F1(+) repeated as reference,218

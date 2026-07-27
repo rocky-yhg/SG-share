@@ -1,0 +1,64 @@
+{
+  "status": "complete",
+  "dataset": "CES full ordered stream",
+  "data_path": "/root/autodl-tmp/sgshare-runtime/data/processed/ces.csv",
+  "data_sha256": "771a8973ac58e1b50a071e0e55ed681a022b7f283cc7f19c631e365720745eb5",
+  "n_events": 35289,
+  "n_users": 218,
+  "n_features": 37,
+  "method": "OLIFL complete-feature/complete-label specialization",
+  "scopes": {
+    "global": "one model shared by all users",
+    "per_user": "one independent model per user"
+  },
+  "seed": 42,
+  "prediction_protocol": "strict prequential: predict, reveal label, update",
+  "preprocessing": "single causal online standardizer shared by both scopes",
+  "model_parameters": {
+    "olifl_c": 0.1,
+    "olifl_gamma": 1.0,
+    "initial_weights": "zeros"
+  },
+  "prediction_parameters": {
+    "smoothing_window": 5,
+    "threshold_mode": "in_window",
+    "threshold_default": 0.5,
+    "threshold_window": 1000,
+    "threshold_min_history": 200,
+    "threshold_refresh_every": 100,
+    "threshold_grid_size": 101
+  },
+  "cold_start": {
+    "checkpoints": [
+      10,
+      20,
+      50
+    ],
+    "require_complete_first_k": true,
+    "aggregation": "calculate positive-class F1 per user, then mean",
+    "median_days": {
+      "10": {
+        "median_days": 47.0,
+        "mean_days": 47.98139534883721,
+        "n_users": 215
+      },
+      "20": {
+        "median_days": 106.0,
+        "mean_days": 105.01904761904763,
+        "n_users": 210
+      },
+      "50": {
+        "median_days": 279.0,
+        "mean_days": 286.4607329842932,
+        "n_users": 191
+      }
+    }
+  },
+  "result_files": [
+    "summary.csv",
+    "cold_start.csv",
+    "protocol_consistent_metrics.csv",
+    "figure_b_reproduction_data.csv"
+  ],
+  "figure_warning": "The conceptual panel mixes first-K user-macro F1 for early points with full-stream pooled F1 for the Full point and Global horizontal reference. Use protocol_consistent_metrics.csv for like-for-like reporting."
+}

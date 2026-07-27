@@ -1,0 +1,10 @@
+alpha,k,macro_f1,macro_recall,accuracy,auc,path
+0.05,3,0.7757697881720688,0.7961871978655778,0.8055201337527275,0.8682233725370293,/root/autodl-tmp/sgshare-runtime/results/no_split_focal_alpha_k_cross_seed42_20260723/ces/a005_k3/events.csv
+0.05,4,0.7749628752357947,0.7959126721102834,0.8045283232735413,0.8679810977883158,/root/autodl-tmp/sgshare-runtime/results/no_split_focal_alpha_k_sensitivity_seed42_20260723/ces/alpha_005/events.csv
+0.05,5,0.7743985940268661,0.7926768618476142,0.8053784465414152,0.8667222068259338,/root/autodl-tmp/sgshare-runtime/results/no_split_focal_alpha_k_cross_seed42_20260723/ces/a005_k5/events.csv
+0.1,3,0.7814827286531771,0.7984485543310894,0.8123494573379807,0.8738729707979631,/root/autodl-tmp/sgshare-runtime/results/ces_alpha_k_full_grid_seed42_20260723/a010_k3/events.csv
+0.1,4,0.7793105853735058,0.7951234704284127,0.811017597551645,0.8727673903679023,/root/autodl-tmp/sgshare-runtime/results/no_split_focal_alpha_k_sensitivity_seed42_20260723/ces/alpha_010/events.csv
+0.1,5,0.7821254749528428,0.7975843578250679,0.8136813171243164,0.8721123642255091,/root/autodl-tmp/sgshare-runtime/results/ces_alpha_k_full_grid_seed42_20260723/a010_k5/events.csv
+0.2,3,0.7856913415442499,0.801020160198026,0.8168834480999745,0.8751972447439256,/root/autodl-tmp/sgshare-runtime/results/no_split_focal_alpha_k_sensitivity_seed42_20260723/ces/k3/events.csv
+0.2,4,0.7877673175090805,0.7996265477704259,0.8204539658250446,0.8752991732185246,/root/autodl-tmp/sgshare-runtime/results/full_final_no_split_focal_seed42_20260723/ces/full_final_no_split_seed42/events.csv
+0.2,5,0.7879166199986631,0.8004154833874049,0.8202556037292074,0.8709471970848054,/root/autodl-tmp/sgshare-runtime/results/no_split_focal_alpha_k_sensitivity_seed42_20260723/ces/k5/events.csv

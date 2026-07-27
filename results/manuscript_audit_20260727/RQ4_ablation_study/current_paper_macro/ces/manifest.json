@@ -1,0 +1,40 @@
+{
+  "data": "/root/autodl-tmp/sgshare-runtime/data/processed/ces.csv",
+  "data_sha256": "771a8973ac58e1b50a071e0e55ed681a022b7f283cc7f19c631e365720745eb5",
+  "dataset": "ces",
+  "device": "cuda",
+  "first_k": 5,
+  "n_events": 35289,
+  "n_features": 37,
+  "notes": {
+    "clean_gradient_reuse": "The same clean route-gradient result is used for Gradient-based and w/o Refinements because they are the same configuration.",
+    "metric_names": "Positive-class F1 and class-macro F1 are recorded separately; neither is silently renamed."
+  },
+  "prediction": "configured deployment prediction from events.prediction",
+  "python": "3.12.3",
+  "seeds": [
+    42
+  ],
+  "table_aliases": {
+    "component": {
+      "full_final": "full_final",
+      "without_personalization": "without_personalization",
+      "without_refinements": "clean_gradient",
+      "without_sharing": "without_sharing"
+    },
+    "grouping_signal": {
+      "feature_based": "feature_grouping",
+      "gradient_based": "clean_gradient",
+      "random": "random_grouping"
+    }
+  },
+  "torch": "2.8.0+cu128",
+  "variants": [
+    "feature_grouping",
+    "random_grouping",
+    "clean_gradient",
+    "without_personalization",
+    "without_sharing",
+    "full_final"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "common_protocol": {
+    "cold_start": "first-K user-macro and pooled positive-class F1",
+    "prediction_order": "predict_then_observe_then_update",
+    "preprocessing": "single causal online standardizer shared by all methods",
+    "primary_metric": "positive-class F1"
+  },
+  "datasets": [
+    "ces"
+  ],
+  "methods": [
+    "olifl"
+  ],
+  "n_errors": 0,
+  "n_runs": 2,
+  "scopes": [
+    "global",
+    "per_user"
+  ],
+  "seeds": [
+    42
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "cold_start": [
+    {
+      "k": 5.0,
+      "n_events": 3470.0,
+      "n_users": 694.0,
+      "pooled_balanced_accuracy": 0.6329002738088507,
+      "pooled_f1": 0.6514877102199224,
+      "pooled_recall": 0.8185955786736021,
+      "pooled_specificity": 0.4472049689440994,
+      "user_macro_balanced_accuracy": 0.3825768491834774,
+      "user_macro_f1": 0.41361671469740635,
+      "user_macro_recall": 0.4881364073006724,
+      "user_macro_specificity": 0.2770172910662824
+    },
+    {
+      "k": 10.0,
+      "n_events": 6320.0,
+      "n_users": 632.0,
+      "pooled_balanced_accuracy": 0.6961992724047928,
+      "pooled_f1": 0.7012592929752692,
+      "pooled_recall": 0.7941580756013745,
+      "pooled_specificity": 0.5982404692082112,
+      "user_macro_balanced_accuracy": 0.4363114074743822,
+      "user_macro_f1": 0.43534141484894906,
+      "user_macro_recall": 0.4962389491661644,
+      "user_macro_specificity": 0.37638386578259997
+    }
+  ],
+  "dataset": "globem",
+  "group_adapter_mode": "standalone",
+  "mean_first_k_f1": 0.4244790647731777,
+  "mean_groups": 11.0,
+  "method": "full_final",
+  "n_events": 8225,
+  "n_groups_final": 11,
+  "n_users": 704,
+  "overall": {
+    "accuracy": 0.7005471124620061,
+    "balanced_accuracy": 0.7076645802736788,
+    "f1": 0.7121654785555686,
+    "fn": 754.0,
+    "fp": 1709.0,
+    "n": 8225.0,
+    "precision": 0.6406644238856182,
+    "recall": 0.8016311496974481,
+    "specificity": 0.6136980108499096,
+    "tn": 2715.0,
+    "tp": 3047.0
+  },
+  "personal_adapter_updates": 6471,
+  "post_warmup": {
+    "accuracy": 0.7053670573719926,
+    "balanced_accuracy": 0.711767985050852,
+    "f1": 0.715443279313632,
+    "fn": 754.0,
+    "fp": 1634.0,
+    "n": 8105.0,
+    "precision": 0.6475409836065574,
+    "recall": 0.7992545260915868,
+    "specificity": 0.6242814440101173,
+    "tn": 2715.0,
+    "tp": 3002.0
+  },
+  "purpose": "cold_start",
+  "seed": 42,
+  "shadow_group_refreshes": 0,
+  "shadow_updates": 0,
+  "signal": "gradient",
+  "target_variant": "p0_bias_best_cflsplit_a_m005_u10_e50",
+  "variant": "without_dynamic_reassignment"
+}

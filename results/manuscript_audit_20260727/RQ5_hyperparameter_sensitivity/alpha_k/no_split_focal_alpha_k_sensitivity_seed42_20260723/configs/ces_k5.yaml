@@ -1,0 +1,101 @@
+dataset: ces
+device: cuda
+evaluation:
+  first_k:
+  - 5
+  - 10
+  - 20
+  - 50
+  require_complete_first_k: true
+grouping:
+  cfl_coherence_threshold: 0.55
+  cfl_disagreement_cosine_threshold: 0.2
+  cold_start_mixing_eta: 0.5
+  cold_start_mixing_until: 20
+  cold_start_prior_global: 0.3
+  cold_start_prior_group: 0.2
+  cold_start_prior_personal: 0.5
+  cold_start_safe_mixing: true
+  global_warmup_steps: 300
+  group_merge_alpha: 0.3
+  incremental_max_split_merge_swaps: 1
+  incremental_objective_margin: 0.0
+  incremental_split_min_users: 4
+  individual_warmup_steps: 20
+  k_min: 5
+  min_observations: 20
+  min_pair_cosine: 0.0
+  periodic_regroup_enabled: true
+  prototype_init_alpha: 0.35
+  prototype_init_enabled: true
+  prototype_init_min_samples: 3
+  regroup_interval: 100
+  regroup_mode: full
+  shadow_group_refresh_alpha: 0.1
+  shadow_group_refresh_changed_only: true
+  shadow_group_refresh_min_updates: 1
+  warmup_fallback_min_users: 2
+  warmup_fallback_signature_count: 1
+  warmup_initial_force_accept: true
+  warmup_initial_grouping_enabled: true
+  warmup_initial_max_groups: 12
+  warmup_initial_min_eligible_users_fallback: 2
+  warmup_initial_min_groups: 2
+  warmup_initial_min_samples: 5
+  warmup_initial_min_samples_fallback: 1
+  warmup_initial_target_groups: 0
+  warmup_min_eligible_users: 10
+  warmup_signature_count: 10
+  warmup_signature_enabled: true
+  warmup_signature_keep_after_initial: false
+model:
+  depth: 2
+  dropout: 0.0
+  ff_mult: 4
+  hidden_dim: 32
+  lora_alpha: 8.0
+  lora_rank: 4
+  num_heads: 4
+refinements:
+  mature_every: 10
+  mature_loss_margin: 0.01
+  mature_min_buffer: 5
+  mature_min_observations: 20
+  mature_refine: true
+  per_user_bias: true
+  per_user_bias_clip: 2.0
+  per_user_bias_init_group_weight: 0.5
+  per_user_bias_init_mode: group_mean
+  per_user_bias_l2: 0.001
+  per_user_bias_lr: 0.005
+  split_cohesion_tolerance: 0.05
+  split_holdout_fallback_to_recent: false
+  split_holdout_min_users: 5
+  split_loss_margin: 0.005
+  split_max_groups: 8
+  split_min_events: 50
+  split_min_users: 10
+  split_pred_posrate_delta_tol: 0.1
+  verified_split: false
+seed: 42
+training:
+  adapter_lr: 0.007
+  backbone_lr: 0.0002
+  backbone_lr_scale: 0.3
+  focal_alpha: 0.75
+  focal_gamma: 2.0
+  positive_class_weight: 5.0
+  route_grad_clip_norm: 1.0
+  route_grad_ema_decay: 0.8
+  route_grad_normalize_before_ema: false
+  smoothing_window: 5
+  threshold_default: 0.5
+  threshold_grid_size: 101
+  threshold_min_history: 200
+  threshold_mode: in_window
+  threshold_refresh_every: 100
+  threshold_window: 1000
+  user_threshold_min_samples: 3
+  user_threshold_posrate_bias: false
+  user_threshold_posrate_bias_alpha: 0.0
+  weight_decay: 0.0001

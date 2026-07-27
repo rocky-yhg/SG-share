@@ -1,0 +1,7 @@
+diagnostic,dataset,signal,metric,value,provenance
+relation_hierarchy,ces,population_mean_relation,mean_cosine,0.197,manuscript_analysis_artifact
+relation_hierarchy,ces,within_cluster_relation,mean_cosine,0.497,manuscript_analysis_artifact
+relation_hierarchy,ces,cluster_centroids,mean_cosine,-0.255,manuscript_analysis_artifact
+transfer_compatibility,ces,gradient_direction_similarity,roc_auc,0.702,linear_surrogate_diagnostic
+transfer_compatibility,ces,feature_similarity,roc_auc,0.538,linear_surrogate_diagnostic
+transfer_compatibility,ces,relation_profile_similarity,roc_auc,0.501,linear_surrogate_diagnostic
